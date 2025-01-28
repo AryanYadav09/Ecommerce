@@ -42,7 +42,7 @@ npm install
 Set Up Environment Variables:
 In the backend folder, create a .env file with the following:
 
-MONGODB_URI=mongodb+srv://aryan:92301703040@cluster0.df68i.mongodb.net
+
 ADMIN_EMAIL=aryan32@gmail.com
 ADMIN_PASSWORD=aryan123
 
