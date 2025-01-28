@@ -66,34 +66,33 @@ npm run dev
 
 
 Key Features
-	Customer Frontend
-		Product Listing & Filters: Users can browse products and apply filters by category, size, and price.
-		Search Functionality: A responsive search bar for finding products easily.
-		Cart Management: Add, update, and remove items from the cart with real-time price updates.
-		Checkout: Place orders with delivery address and payment methods (e.g., Cash on Delivery).
-		Order Tracking: Customers can view and track their orders.
+Customer Frontend
+Product Listing & Filters: Users can browse products and apply filters by category, size, and price.
+Search Functionality: A responsive search bar for finding products easily.
+Cart Management: Add, update, and remove items from the cart with real-time price updates.
+Checkout: Place orders with delivery address and payment methods (e.g., Cash on Delivery).
+Order Tracking: Customers can view and track their orders.
 Admin Dashboard
-		Product Management: Add, edit, and delete products, including attributes like name, price, images, and stock.
-		Order Management: View all orders placed, with details of items, quantities, and customer addresses.
-		User Management: Monitor registered users and their activities.
-		Analytics: View key metrics like sales performance and inventory status.
+Product Management: Add, edit, and delete products, including attributes like name, price, images, and stock.
+Order Management: View all orders placed, with details of items, quantities, and customer addresses.
+User Management: Monitor registered users and their activities.
+Analytics: View key metrics like sales performance and inventory status.
 Tech Stack
-		Frontend
-		React.js with React Router
-		Tailwind CSS for styling
-		Axios for API requests
-		Vite as the build tool
+Frontend
+React.js with React Router
+Tailwind CSS for styling
+Axios for API requests
+Vite as the build tool
 Backend
-		Node.js with Express.js
-		MongoDB (NoSQL Database)
-		Cloudinary (Media storage)
-		JWT (Authentication)
+Node.js with Express.js
+MongoDB (NoSQL Database)
+Cloudinary (Media storage)
+JWT (Authentication)
 Admin Dashboard
-		React.js with React Router
-		Tailwind CSS for styling
-		Axios for API communication
+React.js with React Router
+Tailwind CSS for styling
+Axios for API communication
 Others
-		Vercel (Frontend and Admin Dashboard hosting)
-		Toastify (User notifications)
-		Git (Version control)
-
+Vercel (Frontend and Admin Dashboard hosting)
+Toastify (User notifications)
+Git (Version control)
