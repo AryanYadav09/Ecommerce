@@ -1,49 +1,51 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { ShopContext } from '../context/ShopContext'
-import { useSearchParams } from 'react-router-dom';
+import React, { useContext, useEffect } from 'react';
+import { ShopContext } from '../context/ShopContext';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
 const Verify = () => {
+    const { token, setCartItems, backendUrl } = useContext(ShopContext);
+    const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
 
-    const { navigate, token, setCartItems, backendUrl } = useContext(ShopContext);
-    const [searchParams, setSearchParas] = useSearchParams()
-
-    const success = searchParams.get('success')
-    const orderId = searchParams.get('orderId')
-
-    const verifyPayment = async () => {
-        try {
-            if (!token) {
-                return null
-
-            }
-
-            const response = await axios.post(backendUrl + '/api/order/verifyStripe', { success, orderId }, { headers: { token } })
-
-            if (response.data.success) {
-                setCartItems({})
-                navigate('/orders')
-            } else {
-                navigate('/cart')
-            }
-
-        } catch (error) {
-            console.log(error)
-            toast.error(error.message)
-        }
-    }
+    const success = searchParams.get('success');
+    const orderId = searchParams.get('orderId');
+    const userId = localStorage.getItem("userId");
 
     useEffect(() => {
-        verifyPayment()
+        if (!token || !orderId || !userId) {
+            console.error("Missing required parameters", { token, orderId, userId });
+            navigate('/cart');
+            return;
+        }
 
-    }, [token])
+        const verifyPayment = async () => {
+            try {
+                const response = await axios.get(`${backendUrl}/api/order/verifyStripe`, {
+                    params: { success, orderId, userId },
+                    headers: { token },
+                });
 
-    return (
-        <div>
+                if (response.data.success) {
+                    setCartItems({});
+                    toast.success("Payment Verified ✅");
+                    navigate('/orders');
+                } else {
+                    toast.error("Payment Failed ❌");
+                    navigate('/cart');
+                }
+            } catch (error) {
+                console.error("Payment verification failed:", error);
+                toast.error(error.response?.data?.message || "Payment verification failed.");
+                navigate('/cart');
+            }
+        };
 
-        </div>
-    )
-}
+        verifyPayment();
+    }, [token, navigate, orderId, success, userId, backendUrl, setCartItems]);
 
-export default Verify
+    return <h2>Verifying Payment...</h2>;
+};
+
+export default Verify;

@@ -53,10 +53,8 @@ const placeOrder = async(req, res) =>{
 }
 // placing order using Stripe method
 
-const placeOrderStripe = async(req, res) =>{
-
+const placeOrderStripe = async (req, res) => {
     try {
-
         const { userId, items, amount, address } = req.body;
         const { origin } = req.headers;
 
@@ -65,79 +63,78 @@ const placeOrderStripe = async(req, res) =>{
             items,
             amount,
             address,
-            paymentMethod: 'COD',
+            paymentMethod: 'Stripe', // 🛠️ Fixed: Changed from 'COD' to 'Stripe'
             date: Date.now(),
-            payment: false
-        }
+            payment: false,
+            status: 'Pending' // 🆕 Added status
+        };
 
         const newOrder = new orderModel(orderData);
         await newOrder.save();
 
         const line_items = items.map((item) => ({
             price_data: {
-                currency: currency,
-                product_data: {
-                    name: item.name
-                },
-                quantity: item.quantity,
-            }
-        }))
+                currency: currency.toLowerCase(),
+                product_data: { name: item.name },
+                unit_amount: item.price * 100
+            },
+            quantity: item.quantity
+        }));
 
         line_items.push({
             price_data: {
-                currency: currency,
-                product_data: {
-                    name: 'Delivery Charges'
-                },
-                unit_amount: deliveryCharge * 100,
+                currency: currency.toLowerCase(),
+                product_data: { name: 'Delivery Charges' },
+                unit_amount: deliveryCharge * 100
             },
             quantity: 1
-        })
+        });
 
+        console.log("Creating Stripe session...");
         const session = await stripe.checkout.sessions.create({
-            success_url: `${origin}/verify?success=true&orderId=${newOrder._id}`,
-            cancel_url: `${origin}/verify?success=false&orderId=${newOrder._id}`,
+            success_url: `${origin}/verify?success=true&orderId=${newOrder._id}&userId=${userId}`,
+            cancel_url: `${origin}/verify?success=false&orderId=${newOrder._id}&userId=${userId}`,
             line_items,
             mode: 'payment'
-        })
+        });
 
-        res.json({ success: true, message: 'Order Palced' });
-
+        console.log("Stripe session created:", session);
+        res.json({ success: true, message: 'Order Placed', session_url: session.url });
     } catch (error) {
-        console.log(error);
-        res.json({ success: false, message: error.message });
-
+        console.error(error);
+        res.status(500).json({ success: false, message: error.message });
     }
+};
 
-}
-
-// verify Stripe  
+// 🟢 Verify Stripe Payment
 const verifyStripe = async (req, res) => {
     const { orderId, success, userId } = req.query;
+    console.log("Stripe verification data:", req.query);
 
     try {
-        if (success === "true") {
-            await orderModel.findByIdAndUpdate(orderId, { payment: true }); // updating the payment status of the order
-            await userModel.findByIdAndUpdate(userId, { cartData: {} });    // emptying the cart after successful payment
-
-            res.json({ success: true })
-        } else {
-            await orderModel.findByIdAndDelete(orderId); // deleting the order if payment is not successful
-
-            res.json({ success: false });
+        if (!orderId || !userId) {
+            return res.status(400).json({ success: false, message: "Missing orderId or userId" });
         }
 
-    } catch (error) {
-        console.log(error);
-        res.json({ success: false, message: error.message });
+        if (success === "true") {
+            await orderModel.findByIdAndUpdate(orderId, { payment: true, status: 'Paid' }); // Mark order as paid
+            await userModel.findByIdAndUpdate(userId, { cartData: {} });
 
+            return res.json({ success: true, message: "Payment Verified" });
+        } else {
+            await orderModel.findByIdAndDelete(orderId);
+            return res.json({ success: false, message: "Payment Failed" });
+        }
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ success: false, message: error.message });
     }
-}
+};
 
 
 // placing order using Razorpay method
 
-const placeOrderRazorpay = async(req, res) =>{
+const placeOrderRazorpay = async (req, res) => {
 
 
     try {
