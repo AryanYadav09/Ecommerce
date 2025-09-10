@@ -5,6 +5,7 @@ import { ShopContext } from "../context/ShopContext.jsx";
 
 const NavBar = () => {
   const  [visible, setVisible] = useState(false);
+  const [showPopUp, setShowPopUp] = useState(false); 
   const {setShowSearchBar, getCartCount,navigate, token, setToken} = useContext(ShopContext)
 
 
@@ -49,7 +50,7 @@ const NavBar = () => {
           /> 
           {token && <div className="group-hover:block hidden absolute dropdown-menu right-0 pt-4">
             <div className="flex flex-col gap-2 w-36 py-5 pl-3 bg-slate-100 text-gray-500 rounded">
-              <p className="cursor-pointer hover:text-black ">My Profile</p>
+              <p onClick={() => setShowPopUp(true)} className="cursor-pointer hover:text-black ">My Profile</p>
               <p onClick={()=> navigate('/orders')} className="cursor-pointer hover:text-black ">Orders</p>
               <p onClick={()=> logout()} className="cursor-pointer hover:text-black ">LogOut</p>
             </div>
@@ -80,6 +81,18 @@ const NavBar = () => {
 
           </div>
       </div>
+      {/* ✅ "Coming Soon" Popup */}
+      {showPopUp && (
+        <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-5 rounded-lg text-center">
+            <p className="text-lg font-semibold">🚀 Coming Soon!</p>
+            <p className="text-sm text-gray-600">This feature will be available soon.</p>
+            <button onClick={() => setShowPopUp(false)} className="mt-3 px-4 py-2 bg-black text-white rounded">
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
 
     </div>

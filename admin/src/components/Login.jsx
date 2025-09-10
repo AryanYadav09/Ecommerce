@@ -21,12 +21,14 @@ const Login = ({setToken}) => {
                 setToken(response.data.token)
                 
             }else{
+                toast.dismiss();
                 toast.error(response.data.message)
             }
             
             
         } catch (error) {
             console.log(error)
+            toast.dismiss();
             toast.error('error.message')
         }
     }

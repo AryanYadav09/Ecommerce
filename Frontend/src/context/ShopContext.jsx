@@ -13,13 +13,22 @@ const ShopContextProvider = (props) => {
     const [search, setSearch] = useState('')
     const [showSearchBar, setShowSearchBar] = useState(false)
     const [products, setProducts] = useState([]);
-    const [token, setToken] = useState('')
+    const [token, setToken] = useState(localStorage.getItem('token') || '');  // ✅ Initialize token immediately
     const [cartItems, setCartItems] = useState({});
     const navigate = useNavigate();
+
+
+    useEffect(() => {
+        if (token) {
+            getUserCart(token);
+        }
+    }, [token]);
+
 
     const addToCart = async (itemId, size) => {
 
         if (!size) {
+            toast.dismiss();
             toast.error('Select Product Size');
             return;
         }
@@ -44,6 +53,7 @@ const ShopContextProvider = (props) => {
                 await axios.post(backendUrl + '/api/cart/add', { itemId, size }, { headers: { token } })
             } catch (error) {
                 console.log(error);
+                toast.dismiss();
                 toast.error(error.message);
 
             }
@@ -84,6 +94,7 @@ const ShopContextProvider = (props) => {
                 await axios.post(backendUrl + '/api/cart/update', { itemId, size, quantity }, { headers: { token } })
             } catch (error) {
                 console.log(error);
+                toast.dismiss();
                 toast.error(error.message);
             }
 
@@ -116,11 +127,13 @@ const ShopContextProvider = (props) => {
             if (response.data.success) {
                 setProducts(response.data.products)
             } else {
+                toast.dismiss();
                 toast.error(response.data.message)
             }
 
         } catch (error) {
             console.log(error);
+            toast.dismiss();
             toast.error(error.message)
 
         }
@@ -134,6 +147,7 @@ const ShopContextProvider = (props) => {
             }
         } catch (error) {
             console.log(error);
+            toast.dismiss();
             toast.error(error.message)
             
             }

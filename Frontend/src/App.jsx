@@ -15,19 +15,23 @@ import Footer from './components/Footer.jsx'
 import SearchBar from './components/SearchBar.jsx'
 import { ToastContainer, toast } from 'react-toastify';
 import Verify from './pages/Verify.jsx'
+import { LoadingProvider, useLoading } from './context/LoadingContext.jsx'
+import LoadingSpinner from './components/LoadingSpinner.jsx'
 
 
 
 function App() {
-  const [count, setCount] = useState(0)
+  const { loading } = useLoading();
 
   return (
     <>
       <div className="px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw]">
+
         <ToastContainer/>
         <NavBar />
         <SearchBar/>
       <Routes>
+          {loading && <LoadingSpinner />}
           <Route path='/' element={<Home />} />
           <Route path='/orders' element={<Orders />} />
           <Route path='/about' element={<About />} />

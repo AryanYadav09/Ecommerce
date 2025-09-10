@@ -4,7 +4,7 @@ import Title from "./Title";
 import ProductItem from "./ProductItem";
 
 const BestSellers = () => {
-  const { products } = useContext(ShopContext);
+  const { products, search } = useContext(ShopContext);
   const [bestSeller, setBestSeller] = useState([]);
 
   useEffect(() => {
@@ -16,6 +16,10 @@ const BestSellers = () => {
     }
   }, [products]);
 
+  const filteredBestSellers = bestSeller.filter((product) =>
+    product.name.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div className="py-10">
       <div className="text-center text-3xl py-8">
@@ -26,8 +30,8 @@ const BestSellers = () => {
         </p>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 gap-y-6">
-        {bestSeller.length > 0 ? (
-          bestSeller.map((item, index) => (
+        {filteredBestSellers.length > 0 ? (
+          filteredBestSellers.map((item, index) => (
             <ProductItem
               key={index}
               id={item._id}

@@ -53,7 +53,7 @@ const Orders = () => {
       </div>
 
       <div>
-        {
+        {orderData.length === 0 ? <p className='text-center text-lg mt-4' >No Orders Found</p> :
           orderData.map((item, index) => (
             <div key={index} className='py-4 border-b text-gray-700 flex flex-col md:flex-row md:item-center md:justify-between gap-4 ' >
 

@@ -55,6 +55,7 @@ const PlaceOrder = () => {
 
         } catch (error) {
           console.log(error);
+          toast.dismiss();
           toast.error(error.message)
 
         }
@@ -100,7 +101,7 @@ const PlaceOrder = () => {
             setCartItems({})
             navigate('/orders')
           }else{
-            
+            toast.dismiss();
             toast.error(response.data.message)
           }
           break;
@@ -113,6 +114,7 @@ const PlaceOrder = () => {
             const { session_url } = responseStripe.data
             window.location.replace(session_url)
           } else {
+            toast.dismiss();
             toast.error(responseStripe.data.message)
           }
 
@@ -140,6 +142,7 @@ const PlaceOrder = () => {
 
     } catch (error) {
       console.log(error);
+      toast.dismiss();
       toast.error(error.message)
 
       

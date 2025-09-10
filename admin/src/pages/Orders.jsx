@@ -22,10 +22,12 @@ const Orders = ({ token }) => {
       if (response.data.success) {
         setOrders(response.data.orders.reverse())
       } else {
+        toast.dismiss();
         toast.error(response.data.message)
       }
     } catch (error) {
       console.log(error);
+      toast.dismiss();
       toast.error(error.message)
 
     }
@@ -41,6 +43,7 @@ const Orders = ({ token }) => {
 
     } catch (error) {
       console.log(error);
+      toast.dismiss();
       toast.error(error.message)
 
     }
