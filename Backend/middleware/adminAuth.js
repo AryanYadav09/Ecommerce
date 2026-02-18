@@ -1,20 +1,21 @@
-import jwt from 'jsonwebtoken'
+import { verifyToken } from '../utils/jwt.js'
 
 const adminAuth = async (req, res, next) => {
     
     
     try {
         const { token } = req.headers
+        const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase()
         if( !token  ){
             return res.json({success: false, message: "unautharized"})
         }
-        const decode_token =   jwt.verify(token, process.env.JWT_SECRET);
-        if(decode_token !== process.env.ADMIN_EMAIL + process.env.ADMIN_PASSWORD){
+        const decodeToken = await verifyToken(token);
+        if(decodeToken.adminKey !== adminEmail + process.env.ADMIN_PASSWORD){
             return res.json({success: false, message: "unauthorized"})
         }
         next()
     } catch (error) {
-        console.log(error);
+        console.error(error);
         return res.json({ success: false, message: error.message })
         
     }

@@ -20,6 +20,7 @@ const orderRouter = express.Router();
 
 // verify payments 
 orderRouter.post('/verifyStripe', authUser, verifyStripe);
+orderRouter.get('/verifyStripe', authUser, verifyStripe);
 orderRouter.post('/verifyRazorpay', authUser, verifyRazorpay);
 
     

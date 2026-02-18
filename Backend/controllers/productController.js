@@ -1,5 +1,16 @@
 import { v2 as cloudinary} from 'cloudinary';
 import productModel from '../models/productModel.js';
+import userModel from '../models/userModel.js';
+
+const toOneDecimal = (value) => Number((value || 0).toFixed(1))
+
+const buildReviewStats = (reviews = []) => {
+    const totalReviews = reviews.length
+    const totalRating = reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0)
+    const averageRating = totalReviews ? toOneDecimal(totalRating / totalReviews) : 0
+
+    return { totalReviews, averageRating }
+}
 
 //function  for add product
 const addProduct = async (req, res) => {
@@ -17,7 +28,7 @@ const addProduct = async (req, res) => {
         const image3 = req.files.image3 && req.files.image3[0]
         const image4 = req.files.image4 && req.files.image4[0];
         
-        const images = [image1, image2, image3, image4].filter((item) => item != undefined)
+        const images = [image1, image2, image3, image4].filter((item) => item !== undefined)
         
         
         const imagesUrl = await Promise.all( // iterater of arrary
@@ -27,19 +38,13 @@ const addProduct = async (req, res) => {
             })
         )
         
-
-
-        // Logging data for debugging
-        console.log('Product Data:', { name, description, price, category, subCategory, sizes, bestseller });
-        console.log(imagesUrl);
-
         const productData = {
             name,
             description,
             category,
             price: Number(price),
             subCategory,
-            bestseller: bestseller == 'true' ? 'true': 'false',
+            bestseller: bestseller === 'true' || bestseller === true,
             sizes:JSON.parse(sizes),
             image: imagesUrl,
             date: Date.now()
@@ -101,6 +106,102 @@ const singleProduct = async (req, res) => {
 
 }
 
+// function for listing reviews of a single product
+const getProductReviews = async (req, res) => {
+    try {
+        const { productId } = req.body
+
+        if (!productId) {
+            return res.json({ success: false, message: "Product id is required" })
+        }
+
+        const product = await productModel.findById(productId).select('reviews averageRating totalReviews')
+        if (!product) {
+            return res.json({ success: false, message: "Product not found" })
+        }
+
+        const sortedReviews = [...(product.reviews || [])].sort((a, b) => Number(b.date) - Number(a.date))
+        return res.json({
+            success: true,
+            reviews: sortedReviews,
+            averageRating: product.averageRating || 0,
+            totalReviews: product.totalReviews || 0
+        })
+    } catch (error) {
+        console.error('Error:', error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
+
+// function for adding/updating a user review
+const addProductReview = async (req, res) => {
+    try {
+        const { productId, rating, comment = '', userId } = req.body
+        const normalizedComment = String(comment || '').trim()
+        const normalizedRating = Number(rating)
+
+        if (!productId) {
+            return res.json({ success: false, message: "Product id is required" })
+        }
+
+        if (!Number.isFinite(normalizedRating) || normalizedRating < 1 || normalizedRating > 5) {
+            return res.json({ success: false, message: "Rating must be between 1 and 5" })
+        }
+
+        if (normalizedComment.length > 400) {
+            return res.json({ success: false, message: "Review comment is too long" })
+        }
+
+        const [product, user] = await Promise.all([
+            productModel.findById(productId),
+            userModel.findById(userId).select('name avatar')
+        ])
+
+        if (!product) {
+            return res.json({ success: false, message: "Product not found" })
+        }
+
+        if (!user) {
+            return res.json({ success: false, message: "User not found" })
+        }
+
+        const reviewPayload = {
+            userId: String(userId),
+            userName: user.name || 'User',
+            userAvatar: user.avatar || '',
+            rating: normalizedRating,
+            comment: normalizedComment,
+            date: Date.now()
+        }
+
+        const existingReviewIndex = (product.reviews || []).findIndex((review) => String(review.userId) === String(userId))
+
+        if (existingReviewIndex >= 0) {
+            product.reviews[existingReviewIndex] = reviewPayload
+        } else {
+            product.reviews.push(reviewPayload)
+        }
+
+        const { totalReviews, averageRating } = buildReviewStats(product.reviews)
+        product.totalReviews = totalReviews
+        product.averageRating = averageRating
+        await product.save()
+
+        const sortedReviews = [...(product.reviews || [])].sort((a, b) => Number(b.date) - Number(a.date))
+
+        return res.json({
+            success: true,
+            message: existingReviewIndex >= 0 ? 'Review updated successfully' : 'Review added successfully',
+            reviews: sortedReviews,
+            totalReviews,
+            averageRating
+        })
+    } catch (error) {
+        console.error('Error:', error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
+
 // NEW: Function for updating a product
 const updateProduct = async (req, res) => {
     try {
@@ -118,9 +219,12 @@ const updateProduct = async (req, res) => {
             price: Number(price),
             category,
             subCategory,
-            bestseller: bestseller === 'true' ? true : false,
             sizes: typeof sizes === 'string' ? JSON.parse(sizes) : sizes,
         };
+
+        if (typeof bestseller !== 'undefined') {
+            updateData.bestseller = bestseller === 'true' || bestseller === true;
+        }
 
         // If new images are provided, upload them and update the product images
         if (req.files) {
@@ -152,4 +256,4 @@ const updateProduct = async (req, res) => {
     }
 };
 
-export { addProduct, singleProduct, removeProduct, listProduct, updateProduct };
+export { addProduct, singleProduct, removeProduct, listProduct, getProductReviews, addProductReview, updateProduct };

@@ -1,54 +1,58 @@
-import React from 'react'
-import Title from '../components/Title.jsx'
-import { assets } from '../assets/assets.js'
-import NewsLetterBox from '../components/NewsLetterBox.jsx'
+import Title from '../components/Title.jsx';
+import NewsLetterBox from '../components/NewsLetterBox.jsx';
+import { assets } from '../assets/assets.js';
 
 const About = () => {
   return (
-    <div >
-      <div className='text-2xl text-center pt-8 border-t' >
-
-        <Title text1={'ABOUT'} text2={'US'}  />
-
+    <div className='ui-section'>
+      <div className='text-2xl text-center pt-8 border-t border-white/10'>
+        <Title text1={'ABOUT'} text2={'US'} />
       </div>
 
-      <div className='my-10 flex flex-col md:flex-row gap-16' >
-        <img className='w-full md:max-w-[450px]' src={assets.about_img} alt="" />
-        <div className='flex flex-col justify-center gap-6 md:w-2/4 text-gray-600' >
-
-          <p>Lorem, ipsum dolor sit amet consectetur adipisicing elit. Temporibus fugit odio eligendi unde quos incidunt laboriosam nihil porro itaque hic, facilis quibusdam? Quia nostrum porro veritatis eum, aspernatur quasi dolorum placeat provident aliquam delectus nam explicabo neque, pariatur non asperiores sed nobis optio? Corporis iusto inventore sequi aspernatur sapiente distinctio doloremque aliquid optio temporibus autem! Similique blanditiis, sapiente officia, temporibus tempora reiciendis itaque id magnam perferendis quidem quibusdam eius? Tenetur laborum maiores omnis, laudantium iusto optio excepturi?</p>
-          <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Incidunt, rerum vel in iusto laboriosam explicabo distinctio dolorem natus ipsum omnis voluptas sint nesciunt, quia iure illum harum neque tempora illo tempore amet cum aperiam unde corporis? Ipsam minima quae nam veniam. Quaerat enim, sunt veritatis quidem consectetur cupiditate temporibus tenetur ex repellendus ratione amet rerum!</p>
-
-          <b className='text-gray-800' >Our Mission</b>
-          <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Doloribus nobis accusantium odio possimus, iusto perspiciatis alias ratione nesciunt quo commodi consequatur in consectetur cum corporis eos, ipsum voluptates. Explicabo obcaecati ex reprehenderit ipsam?</p>
+      <div className='my-10 grid md:grid-cols-[1fr_1.2fr] gap-8 items-center'>
+        <div className='ui-media rounded-2xl'>
+          <img className='w-full h-full object-cover' src={assets.about_img} alt="About" />
         </div>
 
+        <div className='ui-card p-6 sm:p-8 flex flex-col gap-5 muted-text leading-7'>
+          <p>
+            We are building a fashion destination where trend, comfort, and confidence meet.
+            Every collection is selected for quality materials, flattering cuts, and effortless styling.
+          </p>
+          <p>
+            From daily essentials to statement pieces, we keep our catalog fresh so your wardrobe keeps evolving.
+            Our focus stays simple: make online fashion shopping feel premium and personal.
+          </p>
+          <b className='text-base text-inherit'>Our Mission</b>
+          <p>
+            Empower every customer to express their style through dependable quality, fair pricing,
+            and an elevated shopping experience from first click to doorstep delivery.
+          </p>
+        </div>
       </div>
 
-      <div className='text-xl py-4 ' >
+      <div className='text-xl py-4'>
         <Title text1={'WHY'} text2={'CHOOSE US'} />
-
       </div>
 
-      <div className='flex flex-col md:flex-row text-sm mb-20' >
-        <div className='border px-10 md:px-16 py-8 sm:py-20 flex flex-col gap-5' >
-          <b>Quality Assurance:</b>
-          <p className='text-gray-600'>Lorem ipsum dolor sit amet consectetur adipisicing elit. Tempora, quisquam dolorem.</p>
+      <div className='grid md:grid-cols-3 gap-4 mb-20'>
+        <div className='ui-card p-6 sm:p-8 flex flex-col gap-4'>
+          <b>Quality Assurance</b>
+          <p className='muted-text'>Strict quality checks for every product before it reaches you.</p>
         </div>
-        <div className='border px-10 md:px-16 py-8 sm:py-20 flex flex-col gap-5' >
-          <b>Convenience:</b>
-          <p className='text-gray-600'>Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni, corrupti.</p>
+        <div className='ui-card p-6 sm:p-8 flex flex-col gap-4'>
+          <b>Convenient Shopping</b>
+          <p className='muted-text'>Smooth browsing, secure checkout, and quick order updates.</p>
         </div>
-        <div className='border px-10 md:px-16 py-8 sm:py-20 flex flex-col gap-5' >
-          <b>Exceptional Customer Service:</b>
-          <p className='text-gray-600'>Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni, corrupti.</p>
+        <div className='ui-card p-6 sm:p-8 flex flex-col gap-4'>
+          <b>Customer-First Support</b>
+          <p className='muted-text'>Friendly support team that resolves issues without delays.</p>
         </div>
       </div>
 
-      <NewsLetterBox/>
-      
+      <NewsLetterBox />
     </div>
-  )
-}
+  );
+};
 
-export default About
+export default About;

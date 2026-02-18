@@ -1,59 +1,63 @@
+/* eslint-disable react/prop-types */
+import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
-import React, { useEffect } from 'react'
-import { backendUrl, currency } from '../App';
 import { toast } from 'react-toastify';
+import { backendUrl, currency } from '../config/constants.js';
 
 const List = ({ token }) => {
-
-  const [list, setList] = React.useState([]);
-  const [editProduct, setEditProduct] = React.useState(null); // Stores the product being edited
-  const [showModal, setShowModal] = React.useState(false); // Controls modal visibility
-
+  const [list, setList] = useState([]);
+  const [editProduct, setEditProduct] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   const fetchList = async () => {
     try {
-      const response = await axios.get(backendUrl + '/api/product/list');
+      const response = await axios.get(`${backendUrl}/api/product/list`);
       if (response.data.success) {
-
         setList(response.data.products);
-      } else {
-        toast.dismiss();
-        toast.error(response.data.message);
+        return;
       }
+      toast.dismiss();
+      toast.error(response.data.message);
     } catch (error) {
-      console.log(error);
       toast.dismiss();
       toast.error(error.message);
-
-
     }
-  }
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditProduct(null);
+  };
+
+  const openEditModal = (product) => {
+    setEditProduct({ ...product });
+    setShowModal(true);
+  };
 
   const removeProduct = async (id) => {
     try {
-      const response = await axios.post(backendUrl + '/api/product/remove', { id }, { headers: { token } });
+      const response = await axios.post(
+        `${backendUrl}/api/product/remove`,
+        { id },
+        { headers: { token } }
+      );
 
       if (response.data.success) {
         toast.dismiss();
         toast.success(response.data.message);
         await fetchList();
-
       } else {
         toast.dismiss();
         toast.error(response.data.message);
       }
-
     } catch (error) {
-      console.log(error);
       toast.dismiss();
       toast.error(error.message);
-
     }
-  }
+  };
 
   const updateProduct = async () => {
     try {
-
       const updatedData = {
         productId: editProduct._id,
         name: editProduct.name,
@@ -64,229 +68,221 @@ const List = ({ token }) => {
         sizes: editProduct.sizes,
         bestseller: editProduct.bestseller,
         inStock: editProduct.inStock
-        // Optionally add image field if you allow image updates.
       };
-      // Send the updated product info to the backend
-      const response = await axios.post(
-        backendUrl + '/api/product/update',
-        updatedData,
-        { headers: { token } }
-      );
+
+      const response = await axios.post(`${backendUrl}/api/product/update`, updatedData, {
+        headers: { token }
+      });
+
       if (response.data.success) {
-        toast.success("Product updated successfully!");
-        await fetchList(); // Refresh list after update
-        setShowModal(false);
-        setEditProduct(null);
+        toast.dismiss();
+        toast.success('Product updated successfully!');
+        await fetchList();
+        closeModal();
       } else {
+        toast.dismiss();
         toast.error(response.data.message);
       }
     } catch (error) {
-      console.log(error);
+      toast.dismiss();
       toast.error(error.response?.data?.message || error.message);
     }
   };
 
-
-
-
   useEffect(() => {
     fetchList();
-  }, [])
+  }, []);
+
+  const emptyState = useMemo(() => list.length === 0, [list.length]);
 
   return (
-    <>
-      <p className='mb-2' >All Products List</p>
-      <div className='flex flex-col gap-2' >
+    <section className='admin-fade-up'>
+      <div className='mb-5'>
+        <h2 className='text-2xl sm:text-3xl'>All Products</h2>
+        <p className='muted-text text-sm mt-1'>Edit pricing, details, and stock status of your catalog.</p>
+      </div>
 
-        {/* list of the products  */}
+      {emptyState ? (
+        <div className='admin-panel p-5 text-sm muted-text'>No products found yet.</div>
+      ) : (
+        <div className='space-y-3 stagger-grid'>
+          <div className='hidden lg:grid grid-cols-[90px_2fr_1fr_120px_170px] gap-3 px-4 py-3 admin-panel text-sm font-semibold'>
+            <p>Image</p>
+            <p>Name</p>
+            <p>Category</p>
+            <p>Price</p>
+            <p>Actions</p>
+          </div>
 
-        <div className='hidden md:grid grid-cols-[1fr_3fr_1fr_1fr_1fr] items-center py-1 px-2 border bg-gray-100 text-sm' >
-          <b>Image</b>
-          <b>Name</b>
-          <b>Category</b>
-          <b>Price</b>
-          <b>Action</b>
-        </div>
-
-        {/*displaying product lists */}
-        {
-          list.map((item, index) => (
-            <div className='grid grid-cols-[1fr_3fr_1fr] md:grid-cols-[1fr_3fr_1fr_1fr_1fr]  items-center gap-2 py-1 px-2 border text-sm' key={index} >
-              <img className='w-12' src={item.image[0]} alt="" />
-              <p>{item.name}</p>
-              <p>{item.category}</p>
-              <p >{currency}{item.price}</p>
-              {/* <button onClick={() => setEditProduct(item) || setShowModal(true)} className="text-gray-500 underline">Edit</button> */}
-              <div className="flex items-center gap-4">
-                <p
+          {list.map((item) => (
+            <div
+              className='admin-card grid grid-cols-1 lg:grid-cols-[90px_2fr_1fr_120px_170px] gap-3 items-center px-4 py-3'
+              key={item._id}
+            >
+              <img className='w-16 h-16 rounded-lg object-cover border border-[var(--border)]' src={item.image[0]} alt={item.name} />
+              <div>
+                <p className='font-semibold'>{item.name}</p>
+                <p className='text-xs muted-text mt-1'>{item.description}</p>
+              </div>
+              <p className='text-sm'>{item.category}</p>
+              <p className='font-semibold'>{currency}{item.price}</p>
+              <div className='flex items-center gap-2'>
+                <button
+                  type='button'
+                  onClick={() => openEditModal(item)}
+                  className='admin-button-ghost text-sm px-3 py-1.5'
+                >
+                  Edit
+                </button>
+                <button
+                  type='button'
                   onClick={() => {
-                    if (window.confirm("Are you sure you want to delete this product?")) {
+                    if (window.confirm('Are you sure you want to delete this product?')) {
                       removeProduct(item._id);
                     }
                   }}
-                  className="text-red-500 cursor-pointer text-lg font-bold hover:text-red-700"
+                  className='rounded-full border border-red-400/45 text-red-300 px-3 py-1.5 text-sm hover:bg-red-500/18 transition-colors'
                 >
-                  X
-                </p>
-                <p
-                  onClick={() => {
-                    setEditProduct(item);
-                    setShowModal(true);
-                  }}
-                  className="text-gray-500 underline cursor-pointer hover:text-gray-700"
-                >
-                  Edit
-                </p>
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showModal && editProduct && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-4 py-8'>
+          <div className='admin-glass w-full max-w-xl p-6 max-h-[90vh] overflow-y-auto'>
+            <h3 className='text-2xl mb-4'>Edit Product</h3>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                updateProduct();
+              }}
+              className='space-y-4'
+            >
+              <div>
+                <label className='block text-sm font-medium mb-1'>Name</label>
+                <input
+                  type='text'
+                  value={editProduct.name}
+                  onChange={(e) => setEditProduct({ ...editProduct, name: e.target.value })}
+                  className='admin-input w-full px-3 py-2.5'
+                  required
+                />
               </div>
 
+              <div>
+                <label className='block text-sm font-medium mb-1'>Description</label>
+                <textarea
+                  value={editProduct.description}
+                  onChange={(e) => setEditProduct({ ...editProduct, description: e.target.value })}
+                  className='admin-input w-full px-3 py-2.5 min-h-24'
+                  required
+                />
+              </div>
 
-            </div>
-          ))
-        }
-
-        {/* edit product model  */}
-        {showModal && editProduct && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-            <div className="bg-white p-6 rounded shadow-md w-full max-w-md">
-              <h2 className="text-xl font-bold mb-4">Edit Product</h2>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  updateProduct();
-                }}
-              >
-                {/* Product Name */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
+              <div className='grid sm:grid-cols-2 gap-4'>
+                <div>
+                  <label className='block text-sm font-medium mb-1'>Price</label>
                   <input
-                    type="text"
-                    value={editProduct.name}
-                    onChange={(e) => setEditProduct({ ...editProduct, name: e.target.value })}
-                    className="mt-1 block w-full border-gray-300 rounded-md p-2"
-                    required
-                  />
-                </div>
-
-                {/* Product Description */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700">Description</label>
-                  <textarea
-                    value={editProduct.description}
-                    onChange={(e) => setEditProduct({ ...editProduct, description: e.target.value })}
-                    className="mt-1 block w-full border-gray-300 rounded-md p-2"
-                    required
-                  ></textarea>
-                </div>
-
-                {/* Product Price */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700">Price</label>
-                  <input
-                    type="number"
+                    type='number'
                     value={editProduct.price}
-                    onChange={(e) => setEditProduct({ ...editProduct, price: Number(e.target.value) })}
-                    className="mt-1 block w-full border-gray-300 rounded-md p-2"
+                    onChange={(e) =>
+                      setEditProduct({ ...editProduct, price: Number(e.target.value) })
+                    }
+                    className='admin-input w-full px-3 py-2.5'
                     required
                   />
                 </div>
 
-                {/* Product Category */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700">Category</label>
+                <div>
+                  <label className='block text-sm font-medium mb-1'>Category</label>
                   <select
                     value={editProduct.category}
                     onChange={(e) => setEditProduct({ ...editProduct, category: e.target.value })}
-                    className="mt-1 block w-full border-gray-300 rounded-md p-2"
+                    className='admin-input w-full px-3 py-2.5'
                   >
-                    <option value="Men">Men</option>
-                    <option value="Women">Women</option>
-                    <option value="Kids">Kids</option>
+                    <option value='Men'>Men</option>
+                    <option value='Women'>Women</option>
+                    <option value='Kids'>Kids</option>
                   </select>
                 </div>
+              </div>
 
-                {/* Product SubCategory */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700">Sub Category</label>
+              <div className='grid sm:grid-cols-2 gap-4'>
+                <div>
+                  <label className='block text-sm font-medium mb-1'>Sub Category</label>
                   <select
                     value={editProduct.subCategory}
                     onChange={(e) => setEditProduct({ ...editProduct, subCategory: e.target.value })}
-                    className="mt-1 block w-full border-gray-300 rounded-md p-2"
+                    className='admin-input w-full px-3 py-2.5'
                   >
-                    <option value="Topwear">Topwear</option>
-                    <option value="Winterwear">Winterwear</option>
-                    <option value="Bottomwear">Bottomwear</option>
+                    <option value='Topwear'>Topwear</option>
+                    <option value='Winterwear'>Winterwear</option>
+                    <option value='Bottomwear'>Bottomwear</option>
                   </select>
                 </div>
 
-                {/* Product Sizes */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700">Sizes (comma separated)</label>
-                  <input
-                    type="text"
-                    value={editProduct.sizes.join(", ")}
-                    onChange={(e) =>
-                      setEditProduct({
-                        ...editProduct,
-                        sizes: e.target.value.split(",").map((s) => s.trim()),
-                      })
-                    }
-                    className="mt-1 block w-full border-gray-300 rounded-md p-2"
-                  />
-                </div>
-
-                {/* Bestseller Checkbox */}
-                <div className="mb-4 flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={editProduct.bestseller}
-                    onChange={(e) => setEditProduct({ ...editProduct, bestseller: e.target.checked })}
-                    id="editBestseller"
-                  />
-                  <label htmlFor="editBestseller" className="text-sm">
-                    Add to Bestseller
-                  </label>
-                </div>
-
-                {/* Availability Dropdown */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700">Availability</label>
+                <div>
+                  <label className='block text-sm font-medium mb-1'>Availability</label>
                   <select
-                    value={editProduct.inStock ? "true" : "false"}
-                    onChange={(e) => setEditProduct({ ...editProduct, inStock: e.target.value === "true" })}
-                    className="mt-1 block w-full border-gray-300 rounded-md p-2"
+                    value={editProduct.inStock ? 'true' : 'false'}
+                    onChange={(e) =>
+                      setEditProduct({ ...editProduct, inStock: e.target.value === 'true' })
+                    }
+                    className='admin-input w-full px-3 py-2.5'
                   >
-                    <option value="true">In Stock</option>
-                    <option value="false">Out of Stock</option>
+                    <option value='true'>In Stock</option>
+                    <option value='false'>Out Of Stock</option>
                   </select>
                 </div>
+              </div>
 
-                <div className="flex justify-end gap-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowModal(false);
-                      setEditProduct(null);
-                    }}
-                    className="bg-gray-500 text-white px-4 py-2 rounded-md"
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-md">
-                    Save Changes
-                  </button>
-                </div>
-              </form>
-            </div>
+              <div>
+                <label className='block text-sm font-medium mb-1'>Sizes (comma separated)</label>
+                <input
+                  type='text'
+                  value={editProduct.sizes.join(', ')}
+                  onChange={(e) =>
+                    setEditProduct({
+                      ...editProduct,
+                      sizes: e.target.value
+                        .split(',')
+                        .map((s) => s.trim())
+                        .filter(Boolean)
+                    })
+                  }
+                  className='admin-input w-full px-3 py-2.5'
+                />
+              </div>
+
+              <label htmlFor='editBestseller' className='flex items-center gap-2 w-fit cursor-pointer'>
+                <input
+                  type='checkbox'
+                  checked={editProduct.bestseller}
+                  onChange={(e) => setEditProduct({ ...editProduct, bestseller: e.target.checked })}
+                  id='editBestseller'
+                  className='w-4 h-4'
+                />
+                <span className='text-sm'>Add to bestseller</span>
+              </label>
+
+              <div className='flex justify-end gap-2 pt-2'>
+                <button type='button' onClick={closeModal} className='admin-button-ghost px-4 py-2 text-sm'>
+                  Cancel
+                </button>
+                <button type='submit' className='admin-button px-4 py-2 text-sm'>
+                  Save Changes
+                </button>
+              </div>
+            </form>
           </div>
-        )}
+        </div>
+      )}
+    </section>
+  );
+};
 
-
-      </div>
-
-
-
-    </>
-  )
-}
-
-export default List
+export default List;

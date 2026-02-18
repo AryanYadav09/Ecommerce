@@ -1,21 +1,20 @@
-import React, { useContext } from 'react'
-import { ShopContext } from '../context/ShopContext'
-import { Link } from 'react-router-dom'
+/* eslint-disable react/prop-types */
+import { useContext } from 'react';
+import { Link } from 'react-router-dom';
+import { ShopContext } from '../context/ShopContext';
 
-const ProductItem = ({id, name, image, price}) => {
-
-    const {currency} = useContext(ShopContext)
+const ProductItem = ({ id, name, image, price }) => {
+  const { currency } = useContext(ShopContext);
 
   return (
-    <Link className='text-gray-700 cursor-pointer' to={`/product/${id}`} >
-      <div className='overflow-hidden' >
-        <img className='hover:scale-110 transition ease-in-out' src={image[0]} alt="" />
+    <Link className='ui-card block p-3 text-inherit' to={`/product/${id}`}>
+      <div className='ui-media rounded-xl'>
+        <img className='w-full aspect-[3/4] object-cover' src={image[0]} alt={name} />
       </div>
-      <p className='pt-3 pb-1 text-sm' >{name}</p>
-      <p className='text-sm font-medium' >{currency}{price}</p>
-      
+      <p className='pt-3 text-sm sm:text-base font-medium'>{name}</p>
+      <p className='pt-1 text-sm muted-text'>{currency}{price}</p>
     </Link>
-  )
-}
+  );
+};
 
-export default ProductItem
+export default ProductItem;

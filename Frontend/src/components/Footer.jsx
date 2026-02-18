@@ -1,39 +1,41 @@
-import React from "react";
 import { assets } from "../assets/assets";
 
 const Footer = () => {
-    return (
-        <div className="flex flex-col sm:grid grid-cols-[3fr_1fr_1fr] gap-14 my-10 mt-40 text-sm">
-            <div>
-                <img src={assets.logo} className="mb-5 w-32" alt="" />
-                <p className="w-full md:w-2/3 text-gray-600">
-                    Lorem, ipsum dolor sit amet consectetur adipisicing elit. Obcaecati
-                    eveniet consectetur recusandae quo, quaerat laudantium doloremque esse
-                    deserunt itaque est?
-                </p>
-            </div>
-            <div>
-                <p className="text-xl font-medium mb-5">COMPANY</p>
-                <ul className="flex flex-col gap-1 text-gray-600">
-                    <li>Home</li>
-                    <li>About us</li>
-                    <li>Delivery</li>
-                    <li>Privacy Policy</li>
-                </ul>
-            </div>
-            <div>
-                <p className="text-xl font-medium mb-5">GET IN TOUCH</p>
-                <ul className="flex flex-col gap-1 text-gray-600">
-                    <li>+1-223-223-4453</li>
-                    <li>contact@foreveryou.com</li>
-                </ul>
-            </div>
-            <div className="col-span-full">
-                <hr />
-                <p className="py-5 text-center text-sm" >Copyright 2025@ Forever.com - All Rights Reserves</p>
-            </div>
+  return (
+    <footer className="ui-section mt-24 mb-8">
+      <div className="glass-panel p-7 sm:p-10 grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr] gap-10 text-sm">
+        <div>
+          <img src={assets.logo} className="mb-4 w-32" alt="logo" />
+          <p className="max-w-md muted-text leading-6">
+            Wear what moves you. We blend trend-forward styles with dependable comfort so your wardrobe
+            feels elevated every single day.
+          </p>
         </div>
-    );
+
+        <div>
+          <p className="text-base font-semibold mb-4">Company</p>
+          <ul className="flex flex-col gap-2 muted-text">
+            <li>Home</li>
+            <li>About Us</li>
+            <li>Delivery</li>
+            <li>Privacy Policy</li>
+          </ul>
+        </div>
+
+        <div>
+          <p className="text-base font-semibold mb-4">Get In Touch</p>
+          <ul className="flex flex-col gap-2 muted-text">
+            <li>+1-223-223-4453</li>
+            <li>contact@foreveryou.com</li>
+          </ul>
+        </div>
+
+        <div className="col-span-full border-t border-white/15 pt-5 text-center muted-text">
+          Copyright 2026 Forever.com. All rights reserved.
+        </div>
+      </div>
+    </footer>
+  );
 };
 
 export default Footer;

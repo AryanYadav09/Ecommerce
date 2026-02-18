@@ -1,33 +1,34 @@
-import React from 'react'
-import Title from '../components/Title'
-import { assets } from '../assets/assets'
-import NewsLetterBox from '../components/NewsLetterBox'
+import NewsLetterBox from '../components/NewsLetterBox';
+import Title from '../components/Title';
+import { assets } from '../assets/assets';
 
 const Contact = () => {
   return (
-    <div >
-      <div className='text-center text-2xl pt-10 border-t' >
-        <Title text1={'CONTACT'}  text2={'US'} />
-
+    <div className='ui-section'>
+      <div className='text-center text-2xl pt-10 border-t border-white/10'>
+        <Title text1={'CONTACT'} text2={'US'} />
       </div>
 
-      <div className='my-10 flex flex-col justify-center md:flex-row gap-10 mb-28' >
-        <img className='w-full md:max-w-[480px]' src={assets.contact_img} alt="" />
-        <div className='flex flex-col justify-center items-start gap-6' >
-          <p className='font-semibold text-xl text-gray-600' >Our Store</p>
-          <p className='text-gray-500' >44355 Willism Station <br />suits washing machine, Uttar Pradesh</p>
-          <p className='text-gray-500' >tel: (91) 48758938989 <br />Email: abcjf@forever.com</p>
-          <p className='font-semibold text-xl text-gray-600' >Career at Forever</p>
-          <p className='text-gray-500' >Learn more about Job openings</p>
-          <button className='border border-black px-8 py-4 text-sm hover:bg-black hover:text-white transition-all duration-500' >Contact Us</button>
-          
+      <div className='my-10 grid md:grid-cols-[1fr_1fr] gap-8 mb-20 items-center'>
+        <div className='ui-media rounded-2xl'>
+          <img className='w-full h-full object-cover' src={assets.contact_img} alt="Contact" />
+        </div>
 
+        <div className='ui-card p-6 sm:p-8 flex flex-col gap-5'>
+          <p className='font-semibold text-xl'>Our Store</p>
+          <p className='muted-text'>44355 Willism Station, Suite 14, Uttar Pradesh</p>
+          <p className='muted-text'>Tel: +91 48758 938989 <br />Email: contact@forever.com</p>
+
+          <p className='font-semibold text-xl'>Careers at Forever</p>
+          <p className='muted-text'>Learn more about open roles and join our growing team.</p>
+
+          <button className='ui-button w-fit px-8 py-3 text-sm' type='button'>Contact Us</button>
         </div>
       </div>
-      <NewsLetterBox/>
-      
-    </div>
-  )
-}
 
-export default Contact
+      <NewsLetterBox />
+    </div>
+  );
+};
+
+export default Contact;

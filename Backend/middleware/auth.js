@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken'
+import { verifyToken } from '../utils/jwt.js'
 
 const authUser = async (req, res , next)=>{
 
@@ -9,12 +9,13 @@ const authUser = async (req, res , next)=>{
     }
 
     try {
-        const token_decode = jwt.verify(token, process.env.JWT_SECRET)
-        req.body.userId = token_decode.id
+        const tokenDecode = await verifyToken(token)
+        req.body = req.body || {}
+        req.body.userId = tokenDecode.id
         next()
 
     } catch (error) {
-        console.log(error);
+        console.error(error);
         res.json({success:false, message: error.message})
         
         

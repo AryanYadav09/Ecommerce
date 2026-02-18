@@ -1,4 +1,3 @@
-import React from 'react';
 import { Loader2 } from 'lucide-react';  // Importing an animated loader icon
 
 const LoadingSpinner = () => {

@@ -1,22 +1,26 @@
-import React from 'react'
-
 const NewsLetterBox = () => {
-
-    const onSubmitHandler = (event) =>{
-        event.preventDefault();
-    }
+  const onSubmitHandler = (event) => {
+    event.preventDefault();
+  };
 
   return (
-    <div className='text-center' >
-        <p className='text-2xl font-medium text-grey-800' >Subscribe and get 20% off</p>
-        <p className='text-gray-400 mt-3' >Lorem ipsum dolor sit amet consectetur adipisicing.</p>
-        <form onSubmit={onSubmitHandler} className='w-full sm:w-1/2 flex items-center gap-3 mx-auto my-6 border pl-3' >
-            <input type="email" placeholder='Enter your Email' className='w-full sm:flex-1 outline-none ' required/>
-            <button className='bg-black text-white text-xs px-10 py-4' >SUBSCRIBE</button>
-        </form>
-      
-    </div>
-  )
-}
+    <section className='ui-section my-16'>
+      <div className='glass-panel text-center px-6 py-10 sm:px-10'>
+        <p className='text-3xl sm:text-4xl'>Join The Style Loop</p>
+        <p className='muted-text mt-3'>Get curated drops, restock alerts, and exclusive deals before anyone else.</p>
 
-export default NewsLetterBox  
+        <form onSubmit={onSubmitHandler} className='mt-7 w-full sm:w-4/5 lg:w-3/5 flex flex-col sm:flex-row items-center gap-3 mx-auto'>
+          <input
+            type="email"
+            placeholder='Enter your email'
+            className='ui-input w-full rounded-full px-5 py-3 text-sm'
+            required
+          />
+          <button className='ui-button w-full sm:w-auto text-sm px-8 py-3'>SUBSCRIBE</button>
+        </form>
+      </div>
+    </section>
+  );
+};
+
+export default NewsLetterBox;
