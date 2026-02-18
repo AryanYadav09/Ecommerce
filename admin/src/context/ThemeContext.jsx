@@ -5,11 +5,6 @@ const ThemeContext = createContext(null);
 const ADMIN_THEME_KEY = 'admin-theme';
 
 const getInitialTheme = () => {
-  const savedTheme = localStorage.getItem(ADMIN_THEME_KEY);
-  if (savedTheme === 'light' || savedTheme === 'dark') {
-    return savedTheme;
-  }
-
   return 'light';
 };
 

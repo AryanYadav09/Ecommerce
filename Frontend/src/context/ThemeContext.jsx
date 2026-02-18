@@ -5,11 +5,6 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 const ThemeContext = createContext(null);
 
 const getInitialTheme = () => {
-  const savedTheme = localStorage.getItem('theme');
-  if (savedTheme === 'light' || savedTheme === 'dark') {
-    return savedTheme;
-  }
-
   return 'light';
 };
 
