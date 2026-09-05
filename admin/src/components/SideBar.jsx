@@ -4,7 +4,9 @@ import { assets } from '../assets/assets.js';
 const menuItems = [
   { to: '/add', icon: assets.add_icon, label: 'Add Product' },
   { to: '/list', icon: assets.order_icon, label: 'Product List' },
-  { to: '/orders', icon: assets.order_icon, label: 'Orders' }
+  { to: '/orders', icon: assets.order_icon, label: 'Orders' },
+  { to: '/analytics', icon: assets.order_icon, label: 'AI Analytics' },
+  { to: '/support', icon: assets.order_icon, label: 'CRM Support' }
 ];
 
 const SideBar = () => {

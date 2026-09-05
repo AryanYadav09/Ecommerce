@@ -8,6 +8,8 @@ import SideBar from './components/SideBar.jsx';
 import Orders from './pages/Orders.jsx';
 import Add from './pages/Add.jsx';
 import List from './pages/List.jsx';
+import Analytics from './pages/Analytics.jsx';
+import Support from './pages/Support.jsx';
 import { useTheme } from './context/ThemeContext.jsx';
 import { ADMIN_TOKEN_KEY, backendUrl } from './config/constants.js';
 
@@ -99,6 +101,8 @@ const App = () => {
                   <Route path='/add' element={<Add token={token} />} />
                   <Route path='/list' element={<List token={token} />} />
                   <Route path='/orders' element={<Orders token={token} />} />
+                  <Route path='/analytics' element={<Analytics token={token} />} />
+                  <Route path='/support' element={<Support token={token} />} />
                   <Route path='*' element={<Navigate to='/add' replace />} />
                 </Routes>
               </div>

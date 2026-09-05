@@ -19,6 +19,10 @@ const ShopContextProvider = ({ children }) => {
   const [wishlistItems, setWishlistItems] = useState([]);
   const [cartItems, setCartItems] = useState({});
 
+  // AI & Recommendation State
+  const [aiSearchResults, setAiSearchResults] = useState(null);
+  const [aiSearchLoading, setAiSearchLoading] = useState(false);
+
   const navigate = useNavigate();
 
   const notifyError = (error, fallbackMessage = 'Something went wrong') => {
@@ -89,6 +93,19 @@ const ShopContextProvider = ({ children }) => {
       setWishlistItems([]);
     }
   }, [backendUrl]);
+
+  const logEvent = useCallback(async (eventType, productId = null, metadata = {}) => {
+    try {
+      await axios.post(`${backendUrl}/api/events`, {
+        userId: userProfile?.id || null,
+        productId,
+        eventType,
+        metadata
+      });
+    } catch {
+      // Background analytics fail-safe
+    }
+  }, [backendUrl, userProfile]);
 
   const addToCart = useCallback(async (itemId, size) => {
     if (!token) {
@@ -211,6 +228,65 @@ const ShopContextProvider = ({ children }) => {
     return totalAmount;
   }, [cartItems, products]);
 
+  // AI Recommendations API method
+  const getPersonalizedRecommendations = useCallback(async (productId = null, limit = 8) => {
+    try {
+      const response = await axios.post(`${backendUrl}/api/recommendations`, {
+        userId: userProfile?.id || null,
+        productId,
+        limit
+      });
+      if (response.data.success) {
+        return response.data.recommendations || [];
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  }, [backendUrl, userProfile]);
+
+  // AI Intelligent Search API method
+  const performAiSearch = useCallback(async (query, limit = 20) => {
+    if (!query || !query.trim()) {
+      setAiSearchResults(null);
+      return null;
+    }
+
+    setAiSearchLoading(true);
+    try {
+      const response = await axios.post(`${backendUrl}/api/search`, {
+        query,
+        userId: userProfile?.id || null,
+        limit
+      });
+      if (response.data.success) {
+        setAiSearchResults(response.data);
+        return response.data;
+      }
+      return null;
+    } catch {
+      return null;
+    } finally {
+      setAiSearchLoading(false);
+    }
+  }, [backendUrl, userProfile]);
+
+  // Salesforce Support Case Submission
+  const createSupportTicket = useCallback(async ({ name, email, subject, message }) => {
+    try {
+      const response = await axios.post(`${backendUrl}/api/support`, {
+        name,
+        email,
+        subject,
+        message,
+        userId: userProfile?.id || null
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  }, [backendUrl, userProfile]);
+
   useEffect(() => {
     getProductsData();
   }, [getProductsData]);
@@ -261,7 +337,15 @@ const ShopContextProvider = ({ children }) => {
     setWishlistItems,
     getUserWishlist,
     toggleWishlist,
-    isInWishlist
+    isInWishlist,
+    // New AI & Composable commerce features
+    logEvent,
+    getPersonalizedRecommendations,
+    performAiSearch,
+    aiSearchResults,
+    setAiSearchResults,
+    aiSearchLoading,
+    createSupportTicket
   }), [
     products,
     currency,
@@ -281,7 +365,13 @@ const ShopContextProvider = ({ children }) => {
     wishlistItems,
     getUserWishlist,
     toggleWishlist,
-    isInWishlist
+    isInWishlist,
+    logEvent,
+    getPersonalizedRecommendations,
+    performAiSearch,
+    aiSearchResults,
+    aiSearchLoading,
+    createSupportTicket
   ]);
 
   return (

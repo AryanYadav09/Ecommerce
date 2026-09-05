@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { ShopContext } from "../context/ShopContext";
 import { assets } from "../assets/assets";
 import RelatedProduct from "../components/RelatedProduct";
+import AiRecommendations from "../components/AiRecommendations";
 
 const Product = () => {
   const { productId } = useParams();
@@ -313,6 +314,12 @@ const Product = () => {
           </div>
         )}
       </div>
+
+      <AiRecommendations
+        productId={productId}
+        title='SIMILAR PRODUCTS (AI POWERED)'
+        subtitle='Smart recommendations tailored to this item from catalog text and customer choices'
+      />
 
       <RelatedProduct subCategory={productData.subCategory} category={productData.category} />
     </div>

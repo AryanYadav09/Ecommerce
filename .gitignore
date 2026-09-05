@@ -1,3 +1,35 @@
-node_modules
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
 
+# Python cache & environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.*.local
 *.env
+!.env.example
+
+# Local Build Output
+dist/
+build/
+
+# Local DB snapshot
+local_db_snapshot.json
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# System Files
+.DS_Store
+Thumbs.db

@@ -1,16 +1,29 @@
 import Stripe from 'stripe';
 import razorpay from 'razorpay';
-import orderModel from '../models/orderModel.js';
-import userModel from '../models/userModel.js';
+import {
+  createOrder as insertOrder,
+  getOrderById,
+  getUserOrders as fetchUserOrders,
+  getAllOrders as fetchAllOrders,
+  updateOrderStatus,
+  updateOrderPayment,
+  deleteOrder
+} from '../services/orderService.js';
+import { clearUserCart } from '../services/cartService.js';
+import { logUserEvent } from '../services/eventService.js';
+import { syncOrderToSalesforce } from '../integrations/salesforce/salesforceClient.js';
 
 const currency = 'inr';
 const deliveryCharge = 10;
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-const razorpayInstance = new razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET
-});
+const stripeKey = process.env.STRIPE_SECRET_KEY?.trim() || '';
+const stripe = stripeKey && !stripeKey.includes('placeholder') ? new Stripe(stripeKey) : null;
+
+const razorpayKeyId = process.env.RAZORPAY_KEY_ID?.trim() || '';
+const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET?.trim() || '';
+const razorpayInstance = (razorpayKeyId && razorpayKeySecret)
+  ? new razorpay({ key_id: razorpayKeyId, key_secret: razorpayKeySecret })
+  : null;
 
 const handleError = (res, error, fallbackMessage = 'Request failed') => {
   return res.status(500).json({
@@ -23,20 +36,29 @@ const placeOrder = async (req, res) => {
   try {
     const { userId, items, amount, address } = req.body;
 
-    const newOrder = new orderModel({
+    const newOrder = await insertOrder({
       userId,
       items,
       amount,
       address,
       paymentMethod: 'COD',
-      date: Date.now(),
-      payment: false
+      payment: false,
+      status: 'Order Placed'
     });
 
-    await newOrder.save();
-    await userModel.findByIdAndUpdate(userId, { cartData: {} });
+    // Log purchase event for recommendation matrix
+    logUserEvent({
+      userId,
+      eventType: 'purchase',
+      metadata: { orderId: newOrder._id, amount }
+    }).catch(() => {});
 
-    return res.json({ success: true, message: 'Order placed successfully' });
+    // Asynchronously synchronize order activity with Salesforce CRM
+    syncOrderToSalesforce(newOrder).catch((err) => {
+      console.warn('[Salesforce] Async order sync warning:', err.message);
+    });
+
+    return res.json({ success: true, message: 'Order placed successfully', order: newOrder });
   } catch (error) {
     return handleError(res, error, 'Unable to place order');
   }
@@ -47,24 +69,30 @@ const placeOrderStripe = async (req, res) => {
     const { userId, items, amount, address } = req.body;
     const { origin } = req.headers;
 
-    const newOrder = new orderModel({
+    const newOrder = await insertOrder({
       userId,
       items,
       amount,
       address,
       paymentMethod: 'Stripe',
-      date: Date.now(),
       payment: false,
       status: 'Pending'
     });
 
-    await newOrder.save();
+    if (!stripe) {
+      // Mock / Sandbox checkout session when stripe key is test/empty
+      return res.json({
+        success: true,
+        message: 'Order placed in sandbox mode',
+        session_url: `${origin || 'http://localhost:5173'}/verify?success=true&orderId=${newOrder._id}&userId=${userId}`
+      });
+    }
 
     const line_items = items.map((item) => ({
       price_data: {
         currency: currency.toLowerCase(),
         product_data: { name: item.name },
-        unit_amount: item.price * 100
+        unit_amount: Math.round(Number(item.price) * 100)
       },
       quantity: item.quantity
     }));
@@ -102,18 +130,20 @@ const verifyStripe = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Missing orderId or userId' });
     }
 
-    const order = await orderModel.findOne({ _id: orderId, userId });
+    const order = await getOrderById(orderId);
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
     if (isSuccess) {
-      await orderModel.findByIdAndUpdate(orderId, { payment: true, status: 'Paid' });
-      await userModel.findByIdAndUpdate(userId, { cartData: {} });
+      await updateOrderPayment(orderId, true, 'Paid');
+      await clearUserCart(userId);
+
+      syncOrderToSalesforce({ ...order, payment: true, status: 'Paid' }).catch(() => {});
       return res.json({ success: true, message: 'Payment verified' });
     }
 
-    await orderModel.findByIdAndDelete(orderId);
+    await deleteOrder(orderId);
     return res.json({ success: false, message: 'Payment failed' });
   } catch (error) {
     return handleError(res, error, 'Unable to verify stripe payment');
@@ -124,20 +154,31 @@ const placeOrderRazorpay = async (req, res) => {
   try {
     const { userId, items, amount, address } = req.body;
 
-    const newOrder = new orderModel({
+    const newOrder = await insertOrder({
       userId,
       items,
       amount,
       address,
       paymentMethod: 'Razorpay',
-      date: Date.now(),
-      payment: false
+      payment: false,
+      status: 'Pending'
     });
 
-    await newOrder.save();
+    if (!razorpayInstance) {
+      return res.json({
+        success: true,
+        order: {
+          id: `order_mock_${newOrder._id}`,
+          amount: amount * 100,
+          currency: currency.toUpperCase(),
+          receipt: newOrder._id
+        },
+        message: 'Order placed in sandbox mode'
+      });
+    }
 
     const order = await razorpayInstance.orders.create({
-      amount: amount * 100,
+      amount: Math.round(amount * 100),
       currency: currency.toUpperCase(),
       receipt: newOrder._id.toString()
     });
@@ -156,10 +197,20 @@ const verifyRazorpay = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Missing razorpay order id' });
     }
 
-    const orderInfo = await razorpayInstance.orders.fetch(razorpay_order_id);
-    if (orderInfo.status === 'paid') {
-      await orderModel.findByIdAndUpdate(orderInfo.receipt, { payment: true });
-      await userModel.findByIdAndUpdate(userId, { cartData: {} });
+    let isPaid = true;
+    let receiptId = null;
+
+    if (razorpayInstance) {
+      const orderInfo = await razorpayInstance.orders.fetch(razorpay_order_id);
+      isPaid = orderInfo.status === 'paid';
+      receiptId = orderInfo.receipt;
+    }
+
+    if (isPaid) {
+      if (receiptId) {
+        await updateOrderPayment(receiptId, true, 'Paid');
+      }
+      await clearUserCart(userId);
       return res.json({ success: true, message: 'Payment successful' });
     }
 
@@ -171,7 +222,7 @@ const verifyRazorpay = async (req, res) => {
 
 const allOrders = async (req, res) => {
   try {
-    const orders = await orderModel.find({});
+    const orders = await fetchAllOrders();
     return res.json({ success: true, orders });
   } catch (error) {
     return handleError(res, error, 'Unable to fetch orders');
@@ -181,7 +232,7 @@ const allOrders = async (req, res) => {
 const userOrders = async (req, res) => {
   try {
     const { userId } = req.body;
-    const orders = await orderModel.find({ userId });
+    const orders = await fetchUserOrders(userId);
     return res.json({ success: true, orders });
   } catch (error) {
     return handleError(res, error, 'Unable to fetch user orders');
@@ -191,7 +242,7 @@ const userOrders = async (req, res) => {
 const updateStatus = async (req, res) => {
   try {
     const { orderId, status } = req.body;
-    await orderModel.findByIdAndUpdate(orderId, { status });
+    await updateOrderStatus(orderId, status);
     return res.json({ success: true, message: 'Order status updated' });
   } catch (error) {
     return handleError(res, error, 'Unable to update order status');

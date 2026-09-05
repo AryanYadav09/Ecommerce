@@ -1,4 +1,5 @@
-import userModel from '../models/userModel.js';
+import { getUserCartData, addItemToCart, updateCartItemQuantity } from '../services/cartService.js';
+import { logUserEvent } from '../services/eventService.js';
 
 const handleError = (res, error, fallbackMessage = 'Cart request failed') => {
   return res.json({
@@ -10,21 +11,21 @@ const handleError = (res, error, fallbackMessage = 'Cart request failed') => {
 const addToCart = async (req, res) => {
   try {
     const { userId, itemId, size } = req.body;
-
-    const userData = await userModel.findById(userId);
-    if (!userData) {
-      return res.json({ success: false, message: 'User not found' });
+    if (!userId || !itemId || !size) {
+      return res.json({ success: false, message: 'Missing required cart parameters' });
     }
 
-    const cartData = userData.cartData || {};
-    if (cartData[itemId]) {
-      cartData[itemId][size] = (cartData[itemId][size] || 0) + 1;
-    } else {
-      cartData[itemId] = { [size]: 1 };
-    }
+    const cartData = await addItemToCart(userId, itemId, size);
 
-    await userModel.findByIdAndUpdate(userId, { cartData });
-    return res.json({ success: true, message: 'Added to cart' });
+    // Asynchronously log user event for recommendation engine
+    logUserEvent({
+      userId,
+      productId: itemId,
+      eventType: 'add_to_cart',
+      metadata: { size }
+    }).catch(() => {});
+
+    return res.json({ success: true, message: 'Added to cart', cartData });
   } catch (error) {
     return handleError(res, error, 'Unable to add to cart');
   }
@@ -33,20 +34,12 @@ const addToCart = async (req, res) => {
 const updateCart = async (req, res) => {
   try {
     const { userId, itemId, size, quantity } = req.body;
-
-    const userData = await userModel.findById(userId);
-    if (!userData) {
-      return res.json({ success: false, message: 'User not found' });
+    if (!userId || !itemId || !size) {
+      return res.json({ success: false, message: 'Missing required cart parameters' });
     }
 
-    const cartData = userData.cartData || {};
-    if (!cartData[itemId]) {
-      cartData[itemId] = {};
-    }
-    cartData[itemId][size] = quantity;
-
-    await userModel.findByIdAndUpdate(userId, { cartData });
-    return res.json({ success: true, message: 'Cart updated' });
+    const cartData = await updateCartItemQuantity(userId, itemId, size, quantity);
+    return res.json({ success: true, message: 'Cart updated', cartData });
   } catch (error) {
     return handleError(res, error, 'Unable to update cart');
   }
@@ -55,13 +48,12 @@ const updateCart = async (req, res) => {
 const getUserCart = async (req, res) => {
   try {
     const { userId } = req.body;
-    const userData = await userModel.findById(userId);
-
-    if (!userData) {
-      return res.json({ success: false, message: 'User not found' });
+    if (!userId) {
+      return res.json({ success: false, message: 'User id required' });
     }
 
-    return res.json({ success: true, cartData: userData.cartData || {} });
+    const cartData = await getUserCartData(userId);
+    return res.json({ success: true, cartData: cartData || {} });
   } catch (error) {
     return handleError(res, error, 'Unable to fetch cart');
   }
