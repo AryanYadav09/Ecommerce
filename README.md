@@ -46,7 +46,6 @@ An enterprise-grade, composable e-commerce architecture upgraded from a monolith
 | **Enterprise CRM** | Salesforce REST API (OAuth2) | Bi-directional customer contact synchronization, order activity tracking, and automated customer support Case creation. |
 | **AI Recommendation** | Python 3.11, FastAPI, Scikit-learn, Pandas | Standalone microservice executing hybrid content-based (TF-IDF cosine similarity) and collaborative filtering (behavioral interaction matrix) with cold-start resolution. |
 | **Intelligent Search** | Python 3.11, FastAPI, Scikit-learn | Standalone microservice parsing natural language queries (e.g. *"men jacket under 100"*), extracting price bounds, category intent, and relevance ranking. |
-| **Containerization** | Docker, Docker Compose | Multi-container development mesh orchestrating backend gateway and Python microservices with unified networking. |
 
 ---
 
@@ -210,12 +209,6 @@ npm install
 npm run dev
 ```
 
-### Running with Docker Compose
-To launch the backend gateway and both Python microservices in unified containers:
-```bash
-docker compose up --build
-```
-
 ---
 
 ## 8. Software Engineering Interview Guide & Talking Points
@@ -235,4 +228,4 @@ When presenting this architecture in technical interviews, speak directly to the
 > *"Strict credential isolation: Shopify Admin API tokens, Salesforce OAuth secrets, and database service keys are stored exclusively in backend environment variables and NEVER exposed to the React frontend. Webhooks from Shopify are cryptographically validated using HMAC SHA256 timing-safe comparisons. All protected customer routes enforce signed JWT authentication."*
 
 ### Q5: What trade-offs were made?
-> *"We balanced microservice modularity with operational simplicity. Rather than introducing heavy message brokers like Kafka or distributed clusters like Kubernetes for a student portfolio, we used direct REST contracts with timeouts, async background event processing, and Docker Compose. This keeps the architecture fully demonstrable, highly reliable, and easily explainable without artificial complexity."*
+> *"We balanced microservice modularity with operational simplicity. Rather than introducing heavy message brokers like Kafka or complex distributed clusters for a portfolio application, we used clean REST contracts with timeouts, async background event processing, and modular service separation. This keeps the architecture fully demonstrable, highly reliable, and easily explainable without artificial complexity."*
