@@ -125,7 +125,7 @@ const SearchBar = () => {
           />
           {aiSearchLoading && (
             <span className='text-xs text-indigo-400 animate-pulse font-medium'>
-              AI Searching...
+              Searching...
             </span>
           )}
           <button
@@ -137,10 +137,10 @@ const SearchBar = () => {
           </button>
         </form>
 
-        {/* AI Parsed Intent Badges */}
+        {/* Parsed Intent Badges */}
         {parsedIntent && (parsedIntent.max_price || parsedIntent.category || parsedIntent.sub_category) && (
           <div className='flex flex-wrap items-center gap-2 mt-3 pt-2 border-t border-white/10 text-xs'>
-            <span className='text-purple-400 font-semibold'>🤖 AI Detected Intent:</span>
+            <span className='text-purple-400 font-semibold'>Filtered by:</span>
             {parsedIntent.category && (
               <span className='px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'>
                 Category: {parsedIntent.category}

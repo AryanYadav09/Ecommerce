@@ -12,7 +12,7 @@ const Home = () => {
       <LatestCollection />
       <AiRecommendations
         title='RECOMMENDED FOR YOU'
-        subtitle='Curated specifically for your taste by our hybrid AI recommendation system'
+        subtitle='Curated specifically for your style and preferences'
       />
       <BestSellers />
       <OurPolicy />

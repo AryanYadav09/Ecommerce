@@ -317,8 +317,8 @@ const Product = () => {
 
       <AiRecommendations
         productId={productId}
-        title='SIMILAR PRODUCTS (AI POWERED)'
-        subtitle='Smart recommendations tailored to this item from catalog text and customer choices'
+        title='SIMILAR PRODUCTS'
+        subtitle='Customers who viewed this item also loved these'
       />
 
       <RelatedProduct subCategory={productData.subCategory} category={productData.category} />

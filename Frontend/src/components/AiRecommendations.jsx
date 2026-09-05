@@ -38,15 +38,12 @@ const AiRecommendations = ({ productId = null, title = 'RECOMMENDED FOR YOU', su
   return (
     <section className='my-10'>
       <div className='text-center py-6 text-2xl sm:text-3xl'>
-        <div className='inline-flex gap-2 items-center mb-2'>
-          <span className='px-2.5 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white tracking-wider'>
-            AI POWERED
-          </span>
-        </div>
         <h2 className='font-semibold tracking-wide'>{title}</h2>
-        <p className='w-3/4 m-auto text-xs sm:text-sm text-gray-400 mt-1'>
-          {subtitle}
-        </p>
+        {subtitle && (
+          <p className='w-3/4 m-auto text-xs sm:text-sm text-gray-400 mt-1'>
+            {subtitle}
+          </p>
+        )}
       </div>
 
       {loading ? (
