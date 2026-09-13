@@ -12,6 +12,7 @@
   "scripts": {
     "test": "node --test tests/integration.test.js",
     "migrate": "node scripts/migrate-mongodb-to-supabase.js",
+    "setup:db": "node scripts/setup-and-seed-supabase.js",
     "start": "node server.js",
     "server": "nodemon server.js"
   },

@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS categories (
     name TEXT NOT NULL UNIQUE,
     slug TEXT NOT NULL UNIQUE,
     description TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 2. Products Table
@@ -80,6 +81,7 @@ CREATE TABLE IF NOT EXISTS wishlist_items (
     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
     CONSTRAINT uq_user_wishlist_product UNIQUE (user_id, product_id)
 );
 
@@ -94,7 +96,8 @@ CREATE TABLE IF NOT EXISTS orders (
     shipping_address JSONB NOT NULL,
     date BIGINT NOT NULL,
     shopify_order_id TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 8. Order Items Table
@@ -106,7 +109,9 @@ CREATE TABLE IF NOT EXISTS order_items (
     price NUMERIC(12, 2) NOT NULL,
     size TEXT,
     quantity INTEGER NOT NULL DEFAULT 1,
-    image JSONB DEFAULT '[]'::jsonb
+    image JSONB DEFAULT '[]'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 9. Reviews Table
@@ -119,7 +124,8 @@ CREATE TABLE IF NOT EXISTS reviews (
     rating NUMERIC(2, 1) NOT NULL,
     comment TEXT DEFAULT '',
     date BIGINT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 10. Behavioral User Events (For AI Recommendation & Analytics)
@@ -142,7 +148,8 @@ CREATE TABLE IF NOT EXISTS support_cases (
     message TEXT NOT NULL,
     status TEXT DEFAULT 'New',
     salesforce_case_id TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Indexes for optimal performance
@@ -155,3 +162,12 @@ CREATE INDEX IF NOT EXISTS idx_reviews_product ON reviews(product_id);
 CREATE INDEX IF NOT EXISTS idx_user_events_user ON user_events(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_events_type ON user_events(event_type);
 CREATE INDEX IF NOT EXISTS idx_support_cases_email ON support_cases(email);
+
+-- Ensure public schema permissions for API access
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
+
+-- Notify PostgREST to reload schema cache
+NOTIFY pgrst, 'reload schema';
