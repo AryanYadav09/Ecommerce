@@ -4,6 +4,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { ShopContext } from "../context/ShopContext";
 import { assets } from "../assets/assets";
+import { getOptimizedImageUrl } from "../utils/imageOptimizer.js";
 import RelatedProduct from "../components/RelatedProduct";
 import AiRecommendations from "../components/AiRecommendations";
 
@@ -24,16 +25,36 @@ const Product = () => {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   useEffect(() => {
-    const fetchProductData = () => {
-      const product = products.find((item) => item._id === productId);
+    let isMounted = true;
+    const fetchProductData = async () => {
+      const product = products.find((item) => item._id === productId || item.id === productId);
       if (product) {
-        setProductData(product);
-        setImage(product.image[0]);
+        if (isMounted) {
+          setProductData(product);
+          setImage(Array.isArray(product.image) ? product.image[0] : product.image);
+        }
+        return;
+      }
+
+      // Direct API fetch fallback for deep linking or fresh navigation
+      if (productId) {
+        try {
+          const res = await axios.get(`${backendUrl}/api/product/${productId}`);
+          if (isMounted && res.data.success && res.data.product) {
+            setProductData(res.data.product);
+            setImage(Array.isArray(res.data.product.image) ? res.data.product.image[0] : res.data.product.image);
+          }
+        } catch {
+          // Graceful fallback handled by catalog
+        }
       }
     };
 
     fetchProductData();
-  }, [productId, products]);
+    return () => {
+      isMounted = false;
+    };
+  }, [productId, products, backendUrl]);
 
   const loadProductReviews = useCallback(async () => {
     try {
@@ -126,23 +147,68 @@ const Product = () => {
     return `${averageRating.toFixed(1)} (${totalReviews} ${totalReviews > 1 ? 'reviews' : 'review'})`;
   }, [averageRating, totalReviews]);
 
+  const jsonLd = useMemo(() => {
+    if (!productData) return null;
+    return {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": productData.name,
+      "image": Array.isArray(productData.image) ? productData.image : [productData.image],
+      "description": productData.description,
+      "sku": productData._id || productData.id,
+      "category": productData.category,
+      "offers": {
+        "@type": "Offer",
+        "url": typeof window !== 'undefined' ? window.location.href : '',
+        "priceCurrency": "INR",
+        "price": productData.price,
+        "availability": productData.inStock !== false ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
+      },
+      ...(totalReviews > 0 ? {
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": averageRating.toFixed(1),
+          "reviewCount": totalReviews
+        }
+      } : {})
+    };
+  }, [productData, averageRating, totalReviews]);
+
   return productData ? (
     <div className="ui-section border-t border-white/10 pt-10 transition-opacity ease-in duration-500 opacity-100">
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
       <div className="flex gap-12 sm:gap-12 flex-col sm:flex-row">
         <div className="flex-1 flex flex-col-reverse gap-3 sm:flex-row">
           <div className="flex sm:flex-col overflow-x-auto sm:overflow-y-scroll justify-between sm:justify-normal sm:w-[18.7%] w-full">
             {productData.image?.map((item, index) => (
               <img
-                src={item}
+                src={getOptimizedImageUrl(item, { width: 160 })}
                 key={index}
-                className="w-[24%] sm:w-full sm:mb-3 flex-shrink-0 cursor-pointer rounded-lg"
-                alt={`Product Image ${index + 1}`}
+                className="w-[24%] sm:w-full sm:mb-3 flex-shrink-0 cursor-pointer rounded-lg object-cover"
+                alt={`${productData.name} view ${index + 1}`}
+                loading="lazy"
+                decoding="async"
+                width="160"
+                height="160"
                 onClick={() => setImage(item)}
               />
             ))}
           </div>
           <div className="flex-1 ui-media rounded-2xl">
-            <img src={image} alt="Selected Product" className="w-full" />
+            <img
+              src={getOptimizedImageUrl(image, { width: 800 })}
+              alt={productData.name}
+              className="w-full object-cover"
+              fetchPriority="high"
+              decoding="async"
+              width="600"
+              height="600"
+            />
           </div>
         </div>
 

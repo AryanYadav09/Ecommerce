@@ -22,50 +22,76 @@ def clean_text(text: str) -> str:
 def get_product_id(prod: Dict[str, Any]) -> str:
     return str(prod.get('_id') or prod.get('id') or '')
 
+import hashlib
+from collections import OrderedDict
+
+# In-memory LRU cache for computed similarity matrices to eliminate O(N^2) recomputation on every request
+_SIMILARITY_CACHE: Dict[str, Any] = OrderedDict()
+_MAX_SIMILARITY_CACHE = 16
+
+def _get_catalog_signature(catalog: List[Dict[str, Any]]) -> str:
+    sig = "|".join(f"{get_product_id(p)}:{p.get('name', '')}:{p.get('price', '')}" for p in catalog)
+    return hashlib.md5(sig.encode('utf-8')).hexdigest()
+
 def compute_similarity_matrix(catalog: List[Dict[str, Any]]):
-    """Computes pairwise cosine similarity between products based on text metadata."""
+    """Computes pairwise cosine similarity between products based on text metadata with LRU caching."""
+    if not catalog:
+        return []
+
+    cat_sig = _get_catalog_signature(catalog)
+    if cat_sig in _SIMILARITY_CACHE:
+        _SIMILARITY_CACHE.move_to_end(cat_sig)
+        return _SIMILARITY_CACHE[cat_sig]
+
     corpus = [
         f"{p.get('name', '')} {p.get('category', '')} {p.get('subCategory', '')} {p.get('description', '')}"
         for p in catalog
     ]
 
+    result = None
     if SKLEARN_AVAILABLE and len(corpus) > 0:
         vectorizer = TfidfVectorizer(stop_words='english')
         tfidf_matrix = vectorizer.fit_transform(corpus)
-        return cosine_similarity(tfidf_matrix, tfidf_matrix)
+        result = cosine_similarity(tfidf_matrix, tfidf_matrix)
+    else:
+        # Pure Python TF-IDF fallback
+        vocab = {}
+        docs_words = []
+        for text in corpus:
+            words = [w for w in clean_text(text).split() if len(w) > 2]
+            docs_words.append(words)
+            for w in set(words):
+                vocab[w] = vocab.get(w, 0) + 1
 
-    # Pure Python TF-IDF fallback
-    vocab = {}
-    docs_words = []
-    for text in corpus:
-        words = [w for w in clean_text(text).split() if len(w) > 2]
-        docs_words.append(words)
-        for w in set(words):
-            vocab[w] = vocab.get(w, 0) + 1
+        num_docs = len(corpus)
+        matrix = []
+        for words in docs_words:
+            vec = {}
+            for w in words:
+                tf = words.count(w) / max(len(words), 1)
+                idf = math.log((num_docs + 1) / (vocab.get(w, 0) + 1)) + 1
+                vec[w] = tf * idf
+            matrix.append(vec)
 
-    num_docs = len(corpus)
-    matrix = []
-    for words in docs_words:
-        vec = {}
-        for w in words:
-            tf = words.count(w) / max(len(words), 1)
-            idf = math.log((num_docs + 1) / (vocab.get(w, 0) + 1)) + 1
-            vec[w] = tf * idf
-        matrix.append(vec)
+        sim = [[0.0] * num_docs for _ in range(num_docs)]
+        for i in range(num_docs):
+            for j in range(num_docs):
+                if i == j:
+                    sim[i][j] = 1.0
+                    continue
+                common = set(matrix[i].keys()) & set(matrix[j].keys())
+                dot = sum(matrix[i][w] * matrix[j][w] for w in common)
+                norm_i = math.sqrt(sum(v * v for v in matrix[i].values()))
+                norm_j = math.sqrt(sum(v * v for v in matrix[j].values()))
+                if norm_i > 0 and norm_j > 0:
+                    sim[i][j] = dot / (norm_i * norm_j)
+        result = sim
 
-    sim = [[0.0] * num_docs for _ in range(num_docs)]
-    for i in range(num_docs):
-        for j in range(num_docs):
-            if i == j:
-                sim[i][j] = 1.0
-                continue
-            common = set(matrix[i].keys()) & set(matrix[j].keys())
-            dot = sum(matrix[i][w] * matrix[j][w] for w in common)
-            norm_i = math.sqrt(sum(v * v for v in matrix[i].values()))
-            norm_j = math.sqrt(sum(v * v for v in matrix[j].values()))
-            if norm_i > 0 and norm_j > 0:
-                sim[i][j] = dot / (norm_i * norm_j)
-    return sim
+    if len(_SIMILARITY_CACHE) >= _MAX_SIMILARITY_CACHE:
+        _SIMILARITY_CACHE.popitem(last=False)
+    _SIMILARITY_CACHE[cat_sig] = result
+
+    return result
 
 class HybridRecommendationEngine:
     def recommend(

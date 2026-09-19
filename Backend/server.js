@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import 'dotenv/config';
 import connectCloudinary from './config/cloudinary.js';
 import supabase, { isSupabaseConfigured } from './config/supabase.js';
@@ -15,6 +16,9 @@ import aiRouter from './routes/aiRoutes.js';
 // App configuration
 const app = express();
 const port = process.env.PORT || 4000;
+
+// Performance: Compress all HTTP responses above 1KB
+app.use(compression({ threshold: 1024 }));
 
 // CORS setup
 app.use(cors());

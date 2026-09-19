@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Allow: /collection
+Allow: /about
+Allow: /contact
+Allow: /product/
+Disallow: /cart
+Disallow: /place-order
+Disallow: /orders
+Disallow: /profile
+Disallow: /verify
+
+Sitemap: https://forever-ecommerce.vercel.app/sitemap.xml

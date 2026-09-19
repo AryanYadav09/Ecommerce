@@ -63,6 +63,7 @@ const addProduct = async (req, res) => {
 const listProduct = async (req, res) => {
   try {
     const products = await getListProducts();
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
     return res.json({ success: true, products });
   } catch (error) {
     console.error('Error in listProduct:', error);

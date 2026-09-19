@@ -1,5 +1,4 @@
-/* eslint-disable react/prop-types, react-refresh/only-export-components */
-import { createContext, useCallback, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -22,6 +21,7 @@ const ShopContextProvider = ({ children }) => {
   // AI & Recommendation State
   const [aiSearchResults, setAiSearchResults] = useState(null);
   const [aiSearchLoading, setAiSearchLoading] = useState(false);
+  const searchAbortRef = useRef(null);
 
   const navigate = useNavigate();
 
@@ -245,29 +245,47 @@ const ShopContextProvider = ({ children }) => {
     }
   }, [backendUrl, userProfile]);
 
-  // AI Intelligent Search API method
+  // AI Intelligent Search API method with stale request cancellation
   const performAiSearch = useCallback(async (query, limit = 20) => {
+    if (searchAbortRef.current) {
+      searchAbortRef.current.abort();
+    }
+
     if (!query || !query.trim()) {
       setAiSearchResults(null);
+      setAiSearchLoading(false);
       return null;
     }
 
+    const controller = new AbortController();
+    searchAbortRef.current = controller;
     setAiSearchLoading(true);
+
     try {
-      const response = await axios.post(`${backendUrl}/api/search`, {
-        query,
-        userId: userProfile?.id || null,
-        limit
-      });
+      const response = await axios.post(
+        `${backendUrl}/api/search`,
+        {
+          query: query.trim(),
+          userId: userProfile?.id || null,
+          limit
+        },
+        { signal: controller.signal }
+      );
+
       if (response.data.success) {
         setAiSearchResults(response.data);
         return response.data;
       }
       return null;
-    } catch {
+    } catch (err) {
+      if (axios.isCancel(err) || err.name === 'CanceledError' || err.name === 'AbortError') {
+        return null; // Ignore cleanly aborted stale requests
+      }
       return null;
     } finally {
-      setAiSearchLoading(false);
+      if (searchAbortRef.current === controller) {
+        setAiSearchLoading(false);
+      }
     }
   }, [backendUrl, userProfile]);
 
@@ -307,10 +325,12 @@ const ShopContextProvider = ({ children }) => {
       return;
     }
 
-    getUserCart(token);
-    getUserProfile(token);
-    getUserWishlist(token);
-  }, [token, getUserCart, getUserProfile, getUserWishlist]);
+    // Parallelize user cart and user profile fetch; profile already populates wishlist
+    Promise.all([
+      getUserCart(token),
+      getUserProfile(token)
+    ]);
+  }, [token, getUserCart, getUserProfile]);
 
   const value = useMemo(() => ({
     products,

@@ -163,11 +163,47 @@ CREATE INDEX IF NOT EXISTS idx_user_events_user ON user_events(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_events_type ON user_events(event_type);
 CREATE INDEX IF NOT EXISTS idx_support_cases_email ON support_cases(email);
 
--- Ensure public schema permissions for API access
+-- ==============================================================================
+-- Row-Level Security (RLS) & Security Hardening
+-- ==============================================================================
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pending_users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cart_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE wishlist_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE support_cases ENABLE ROW LEVEL SECURITY;
+
+-- Public read policies for catalog tables
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'products' AND policyname = 'Public read products') THEN
+    CREATE POLICY "Public read products" ON products FOR SELECT USING (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'categories' AND policyname = 'Public read categories') THEN
+    CREATE POLICY "Public read categories" ON categories FOR SELECT USING (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'reviews' AND policyname = 'Public read reviews') THEN
+    CREATE POLICY "Public read reviews" ON reviews FOR SELECT USING (true);
+  END IF;
+END $$;
+
+-- Revoke unrestricted permissions from anon role
+REVOKE INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public FROM anon;
+REVOKE ALL ON users, pending_users, cart_items, wishlist_items, orders, order_items, user_events, support_cases FROM anon;
+
+-- Grant permissions for service_role and authenticated backend operations
 GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
-GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
-GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO service_role;
+
+-- Allow anon read-only access to public catalog tables
+GRANT SELECT ON categories, products, reviews TO anon;
 
 -- Notify PostgREST to reload schema cache
 NOTIFY pgrst, 'reload schema';

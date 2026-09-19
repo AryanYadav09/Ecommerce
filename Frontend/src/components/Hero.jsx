@@ -21,7 +21,15 @@ const Hero = () => {
 
         <div className="relative p-4 sm:p-6 lg:p-8">
           <div className="ui-media rounded-2xl h-full min-h-[300px] md:min-h-[420px]">
-            <img className='w-full h-full object-cover' src={assets.hero_img} alt="Hero" />
+            <img
+              className='w-full h-full object-cover'
+              src={assets.hero_img}
+              alt="Forever Fashion New Season Edit"
+              fetchPriority='high'
+              decoding='async'
+              width='600'
+              height='500'
+            />
           </div>
         </div>
       </div>

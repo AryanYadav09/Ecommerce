@@ -17,14 +17,41 @@ export const formatProduct = (p) => {
   };
 };
 
-export const listProducts = async () => {
+let cachedProducts = null;
+let cacheExpiresAt = 0;
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds
+
+export const invalidateProductCache = () => {
+  cachedProducts = null;
+  cacheExpiresAt = 0;
+};
+
+export const listProducts = async ({ forceRefresh = false } = {}) => {
+  const now = Date.now();
+  if (!forceRefresh && cachedProducts && now < cacheExpiresAt) {
+    return cachedProducts;
+  }
+
   const { data, error } = await supabase.from('products').select('*');
-  if (error) throw new Error(error.message);
-  return (data || []).map(formatProduct);
+  if (error) {
+    if (cachedProducts) return cachedProducts;
+    throw new Error(error.message);
+  }
+
+  cachedProducts = (data || []).map(formatProduct);
+  cacheExpiresAt = now + CACHE_TTL_MS;
+  return cachedProducts;
 };
 
 export const getProductById = async (id) => {
   if (!id) return null;
+
+  // Fast memory lookup if cache is warm
+  if (cachedProducts && Array.isArray(cachedProducts)) {
+    const matched = cachedProducts.find((p) => p.id === id || p._id === id);
+    if (matched) return matched;
+  }
+
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -36,6 +63,7 @@ export const getProductById = async (id) => {
 };
 
 export const addProduct = async (productData) => {
+  invalidateProductCache();
   const id = `prod_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
   const record = {
     id,
@@ -59,6 +87,7 @@ export const addProduct = async (productData) => {
 };
 
 export const updateProduct = async (id, updateData) => {
+  invalidateProductCache();
   const payload = {};
   if (updateData.name !== undefined) payload.name = updateData.name;
   if (updateData.description !== undefined) payload.description = updateData.description;
@@ -82,6 +111,7 @@ export const updateProduct = async (id, updateData) => {
 };
 
 export const removeProduct = async (id) => {
+  invalidateProductCache();
   const { error } = await supabase.from('products').delete().eq('id', id);
   if (error) throw new Error(error.message);
   return true;

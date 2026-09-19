@@ -4,12 +4,16 @@ import { getEventsForUser } from './eventService.js';
 
 const RECOMMENDATION_URL = process.env.RECOMMENDATION_SERVICE_URL || 'http://localhost:8001';
 const SEARCH_URL = process.env.SEARCH_SERVICE_URL || 'http://localhost:8002';
-const AI_TIMEOUT_MS = 2500;
+const AI_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS) || 2000;
 
 export const getRecommendations = async ({ userId = null, productId = null, limit = 8 }) => {
+  let products = [];
   try {
-    const products = await listProducts();
-    const userEvents = userId ? await getEventsForUser(userId) : [];
+    const [fetchedProducts, userEvents] = await Promise.all([
+      listProducts(),
+      userId ? getEventsForUser(userId) : Promise.resolve([])
+    ]);
+    products = fetchedProducts;
 
     // Call Python Recommendation Service
     const response = await axios.post(
@@ -35,7 +39,8 @@ export const getRecommendations = async ({ userId = null, productId = null, limi
   }
 
   // Graceful Fallback Strategy: Cold-start / popular / category similarity
-  const catalog = await listProducts();
+  // Reuse already fetched products if available, otherwise fetch once
+  const catalog = products.length > 0 ? products : await listProducts();
   let candidateProducts = [...catalog];
 
   if (productId) {
@@ -78,8 +83,9 @@ export const performIntelligentSearch = async ({ query, userId = null, limit = 2
     };
   }
 
+  let catalog = [];
   try {
-    const catalog = await listProducts();
+    catalog = await listProducts();
     const response = await axios.post(
       `${SEARCH_URL}/search`,
       {
@@ -104,7 +110,9 @@ export const performIntelligentSearch = async ({ query, userId = null, limit = 2
   }
 
   // Graceful Fallback: Query parsing for price constraints and keywords
-  const catalog = await listProducts();
+  if (catalog.length === 0) {
+    catalog = await listProducts();
+  }
   const lower = normalizedQuery.toLowerCase();
 
   // Extract price intent (e.g. "under 5000", "below 100", "< 50")

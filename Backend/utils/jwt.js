@@ -1,12 +1,20 @@
 import { SignJWT, jwtVerify } from 'jose'
 
+let cachedSecretKey = null;
+let lastSecret = null;
+
 const getSecretKey = () => {
-    const secret = process.env.JWT_SECRET
+    const secret = process.env.JWT_SECRET;
     if (!secret) {
-        throw new Error('JWT_SECRET is not configured')
+        throw new Error('JWT_SECRET is not configured');
     }
-    return new TextEncoder().encode(secret)
-}
+    if (cachedSecretKey && lastSecret === secret) {
+        return cachedSecretKey;
+    }
+    lastSecret = secret;
+    cachedSecretKey = new TextEncoder().encode(secret);
+    return cachedSecretKey;
+};
 
 const createUserToken = async (id) => {
     return new SignJWT({ id })

@@ -109,6 +109,12 @@ class QueryBuilder {
     return this;
   }
 
+  in(column, values) {
+    const set = new Set((values || []).map(String));
+    this.filters.push((row) => set.has(String(row[column])));
+    return this;
+  }
+
   order(column, { ascending = true } = {}) {
     this.sortField = column;
     this.sortAscending = ascending;

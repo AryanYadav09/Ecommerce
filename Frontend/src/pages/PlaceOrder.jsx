@@ -5,6 +5,7 @@ import { assets } from '../assets/assets';
 import CartTotal from '../components/CartTotal.jsx';
 import Title from '../components/Title';
 import { ShopContext } from '../context/ShopContext.jsx';
+import { loadRazorpayScript } from '../utils/loadRazorpay.js';
 
 const PlaceOrder = () => {
   const [method, setMethod] = useState('cod');
@@ -28,6 +29,13 @@ const PlaceOrder = () => {
   };
 
   const initPay = async (order) => {
+    const isLoaded = await loadRazorpayScript();
+    if (!isLoaded || !window.Razorpay) {
+      toast.dismiss();
+      toast.error('Unable to load Razorpay checkout. Please verify your connection.');
+      return;
+    }
+
     const options = {
       key: import.meta.env.VITE_RAZORPAY_KEY_ID,
       amount: order.amount,

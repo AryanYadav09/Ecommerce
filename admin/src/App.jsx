@@ -1,17 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense, lazy } from 'react';
 import axios from 'axios';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import Login from './components/Login.jsx';
 import NavBar from './components/NavBar.jsx';
 import SideBar from './components/SideBar.jsx';
-import Orders from './pages/Orders.jsx';
-import Add from './pages/Add.jsx';
-import List from './pages/List.jsx';
-import Analytics from './pages/Analytics.jsx';
-import Support from './pages/Support.jsx';
 import { useTheme } from './context/ThemeContext.jsx';
 import { ADMIN_TOKEN_KEY, backendUrl } from './config/constants.js';
+
+const Orders = lazy(() => import('./pages/Orders.jsx'));
+const Add = lazy(() => import('./pages/Add.jsx'));
+const List = lazy(() => import('./pages/List.jsx'));
+const Analytics = lazy(() => import('./pages/Analytics.jsx'));
+const Support = lazy(() => import('./pages/Support.jsx'));
 
 const App = () => {
   const [token, setToken] = useState(localStorage.getItem(ADMIN_TOKEN_KEY) || '');
@@ -96,15 +97,17 @@ const App = () => {
             <SideBar />
             <main className='flex-1 admin-fade-up'>
               <div className='admin-glass min-h-full p-4 sm:p-6'>
-                <Routes>
-                  <Route path='/' element={<Navigate to='/add' replace />} />
-                  <Route path='/add' element={<Add token={token} />} />
-                  <Route path='/list' element={<List token={token} />} />
-                  <Route path='/orders' element={<Orders token={token} />} />
-                  <Route path='/analytics' element={<Analytics token={token} />} />
-                  <Route path='/support' element={<Support token={token} />} />
-                  <Route path='*' element={<Navigate to='/add' replace />} />
-                </Routes>
+                <Suspense fallback={<div className='p-8 text-center muted-text'>Loading section...</div>}>
+                  <Routes>
+                    <Route path='/' element={<Navigate to='/add' replace />} />
+                    <Route path='/add' element={<Add token={token} />} />
+                    <Route path='/list' element={<List token={token} />} />
+                    <Route path='/orders' element={<Orders token={token} />} />
+                    <Route path='/analytics' element={<Analytics token={token} />} />
+                    <Route path='/support' element={<Support token={token} />} />
+                    <Route path='*' element={<Navigate to='/add' replace />} />
+                  </Routes>
+                </Suspense>
               </div>
             </main>
           </div>

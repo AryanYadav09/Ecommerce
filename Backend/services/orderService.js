@@ -48,21 +48,18 @@ export const createOrder = async ({
   const { error: orderErr } = await supabase.from('orders').insert(orderRecord);
   if (orderErr) throw new Error(orderErr.message);
 
-  if (Array.isArray(items)) {
-    for (let i = 0; i < items.length; i++) {
-      const itm = items[i];
-      const itemRecord = {
-        id: `item_${orderId}_${i}`,
-        order_id: orderId,
-        product_id: itm._id || itm.productId || `p_${i}`,
-        name: itm.name || 'Product',
-        price: Number(itm.price) || 0,
-        size: itm.size || '',
-        quantity: Number(itm.quantity) || 1,
-        image: itm.image || []
-      };
-      await supabase.from('order_items').insert(itemRecord);
-    }
+  if (Array.isArray(items) && items.length > 0) {
+    const itemRecords = items.map((itm, i) => ({
+      id: `item_${orderId}_${i}`,
+      order_id: orderId,
+      product_id: itm._id || itm.productId || `p_${i}`,
+      name: itm.name || 'Product',
+      price: Number(itm.price) || 0,
+      size: itm.size || '',
+      quantity: Number(itm.quantity) || 1,
+      image: Array.isArray(itm.image) ? itm.image : []
+    }));
+    await supabase.from('order_items').insert(itemRecords);
   }
 
   // Clear user's cart on order creation
@@ -83,6 +80,37 @@ export const getOrderById = async (orderId) => {
   return formatOrder(data);
 };
 
+const formatOrdersBatch = async (orders) => {
+  if (!orders || orders.length === 0) return [];
+  const orderIds = orders.map((o) => o.id);
+
+  const { data: allItems } = await supabase
+    .from('order_items')
+    .select('*')
+    .in('order_id', orderIds);
+
+  const itemsMap = new Map();
+  for (const item of (allItems || [])) {
+    if (!itemsMap.has(item.order_id)) {
+      itemsMap.set(item.order_id, []);
+    }
+    itemsMap.get(item.order_id).push({
+      ...item,
+      _id: item.product_id,
+      image: Array.isArray(item.image) ? item.image : []
+    });
+  }
+
+  return orders.map((o) => ({
+    ...o,
+    _id: o.id,
+    payment: Boolean(o.payment_status),
+    paymentMethod: o.payment_method,
+    address: o.shipping_address,
+    items: itemsMap.get(o.id) || []
+  }));
+};
+
 export const getUserOrders = async (userId) => {
   const { data: orders, error } = await supabase
     .from('orders')
@@ -91,12 +119,7 @@ export const getUserOrders = async (userId) => {
     .order('date', { ascending: false });
 
   if (error || !orders) return [];
-
-  const formatted = [];
-  for (const o of orders) {
-    formatted.push(await formatOrder(o));
-  }
-  return formatted;
+  return formatOrdersBatch(orders);
 };
 
 export const getAllOrders = async () => {
@@ -106,12 +129,7 @@ export const getAllOrders = async () => {
     .order('date', { ascending: false });
 
   if (error || !orders) return [];
-
-  const formatted = [];
-  for (const o of orders) {
-    formatted.push(await formatOrder(o));
-  }
-  return formatted;
+  return formatOrdersBatch(orders);
 };
 
 export const updateOrderStatus = async (orderId, status) => {
